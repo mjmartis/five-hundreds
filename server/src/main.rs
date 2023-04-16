@@ -1,7 +1,7 @@
 use std::env;
 use std::net;
-use std::thread;
 use std::sync::mpsc;
+use std::thread;
 
 use tungstenite as ws2;
 
@@ -31,8 +31,10 @@ fn channel_ws_msgs(stream: Result<net::TcpStream, std::io::Error>, tx: mpsc::Sen
     }
 }
 
-fn main () {
-    let addr = env::args().nth(1).unwrap_or_else(|| "127.0.0.1:8080".to_string());
+fn main() {
+    let addr = env::args()
+        .nth(1)
+        .unwrap_or_else(|| "127.0.0.1:8080".to_string());
 
     // Create a channel and print its messages on another thread.
     let (tx, rx) = mpsc::channel();

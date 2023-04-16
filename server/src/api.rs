@@ -17,8 +17,8 @@ pub enum BidSuit {
 #[derive(Debug)]
 pub enum Bid {
     Tricks(isize, BidSuit),
-    Miz,
-    OpenMiz,
+    Mis,
+    OpenMis,
     Pass,
 }
 
@@ -59,7 +59,10 @@ pub enum Step {
     Poll,
 
     // Ask to join.
-    Join,
+    //
+    // The first argument is the index of the team to join (i.e. in [0, 1]).
+    // The second argument, non-empty, is a token used to rejoin an ongoing game.
+    Join(isize, String),
 
     // Make a bid.
     MakeBid(Bid),
@@ -81,7 +84,8 @@ pub enum Step {
 #[derive(Debug)]
 pub enum State {
     // You or another player have just joined.
-    // (player count, your index) stored in context struct.
+    // Player count, your index and your resume token are stored in context struct.
+    // TODO: transmit e.g. player names.
     PlayerJoined,
 
     // You have been rejected (e.g. because a game is ongoing).
@@ -205,7 +209,7 @@ pub struct PlaysContext {
   pub hand_sizes: Vec<isize>,  // Invariant: length of 4.
 
   // The previous trick, if there was one. Listed in order from player 1 to
-  // player 4. Inner Option is to support e.g. miz bids, where one player
+  // player 4. Inner Option is to support e.g. mis bids, where one player
   // doesn't play.
   pub previous_trick: Option<Vec<Option<Play>>>,
 

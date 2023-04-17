@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+nanoid = "0.4.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "*"
 futures-util = "*"
 tokio = { version = "1.0.0", features = ["full", "tracing"] }
 tokio-util = { version = "0.7.0", features = ["full"] }

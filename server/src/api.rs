@@ -1,12 +1,11 @@
 // The API used for web clients and the server to communicate.
-pub mod types;
-use types::Bid;
-use types::Card;
-use types::Suit;
-use types::Play;
+
+use crate::types;
+
+use serde::{Deserialize, Serialize};
 
 // The actions a player can take.
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Step {
     // Degenerate case: just ask to see state.
     Poll,
@@ -18,23 +17,23 @@ pub enum Step {
     Join(isize, String),
 
     // Make a bid.
-    MakeBid(Bid),
+    MakeBid(types::Bid),
 
     // Take or leave kitty cards.
-    UseKitty(Vec<Card>), // Your selected hand. Invariant: length of 10.
+    UseKitty(Vec<types::Card>), // Your selected hand. Invariant: length of 10.
 
     // Announce the suit of the joker in your hand.
-    AnnounceJokerSuit(Suit),
+    AnnounceJokerSuit(types::Suit),
 
     // Choose a card (and possibly the suit of the joker) to play.
-    MakePlay(Play),
+    MakePlay(types::Play),
 
     // Exit the match early.
     Leave,
 }
 
 // The state that the session can be in.
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum State {
     // You or another player have just joined.
     // Player count, your index and your resume token are stored in context struct.
@@ -45,11 +44,11 @@ pub enum State {
     Excluded(String), // Reason.
 
     // Your hand has been dealt.
-    // Card vector of length 10 stored in context struct.
+    // types::Card vector of length 10 stored in context struct.
     HandDealt,
 
     // Your turn to bid.
-    WaitingForYourBid(Vec<Bid>), // Bids available to you.
+    WaitingForYourBid(Vec<types::Bid>), // Bids available to you.
 
     // Waiting for another player to bid.
     // Current bidder stored in context struct.
@@ -64,7 +63,7 @@ pub enum State {
     BidWon,
 
     // When you must choose how to use the kitty (i.e. you have won the bid).
-    WaitingForYourKitty(Vec<Card>), // Invariant: length of 3.
+    WaitingForYourKitty(Vec<types::Card>), // Invariant: length of 3.
 
     // When they must choose how to use the kitty.
     WaitingForTheirKitty,
@@ -76,11 +75,11 @@ pub enum State {
     WaitingForTheirJokerSuit,
 
     // When they announce the suit of their joker.
-    // Suit stored in context struct.
+    // types::Suit stored in context struct.
     JokerSuitAnnounced,
 
     // Waiting for you to choose a card to play.
-    WaitingForYourPlay(Vec<Play>),
+    WaitingForYourPlay(Vec<types::Play>),
 
     // Waiting for another player to play.
     // Current playing player (and trick so far) stored in context struct.
@@ -108,92 +107,92 @@ pub enum State {
 // Static info.
 
 // Background information about the lobby.
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct LobbyContext {
-  // Number of players currently joined.
-  pub players_count: isize,
+    // Number of players currently joined.
+    pub players_count: isize,
 
-  // Your index in the player list.
-  pub your_player_index: isize,
+    // Your index in the player list.
+    pub your_player_index: isize,
 
-  // Your index in the team list (i.e. in [0, 1]).
-  pub your_team_index: isize,
+    // Your index in the team list (i.e. in [0, 1]).
+    pub your_team_index: isize,
 }
 
 // Background information about the match.
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct MatchContext {
-  // Game history. TODO make more sophisticated.
-  //   (team 1 score delta, team 1 score total, 
-  //    team 2 score delta, team 2 score total).
-  pub past_games: Vec<(isize, isize, isize, isize)>,
+    // Game history. TODO make more sophisticated.
+    //   (team 1 score delta, team 1 score total,
+    //    team 2 score delta, team 2 score total).
+    pub past_games: Vec<(isize, isize, isize, isize)>,
 }
 
 // Background information about the bidding.
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct BiddingContext {
-  // The last bids made by each player. Ordered from player 1 to player 4.
-  pub bids: Vec<Option<Bid>>,  // Invariant: length of 4.
-  
-  pub current_bidder_index: isize,
+    // The last bids made by each player. Ordered from player 1 to player 4.
+    pub bids: Vec<Option<types::Bid>>, // Invariant: length of 4.
+
+    pub current_bidder_index: isize,
 }
 
 // Background information about the bid that won.
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct WinningBidContext {
-  pub winning_bidder_index: isize,
+    pub winning_bidder_index: isize,
 
-  pub winning_bid: Bid,  // Invariant: not a Pass.
+    pub winning_bid: types::Bid, // Invariant: not a Pass.
 }
 
 // Background information about the tricks being played.
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct PlaysContext {
-  // The joker suit, if fixed.
-  pub joker_suit: Option<Suit>,
+    // The joker suit, if fixed.
+    pub joker_suit: Option<types::Suit>,
 
-  // The number of tricks you have won.
-  pub your_tricks_count: isize,
+    // The number of tricks you have won.
+    pub your_tricks_count: isize,
 
-  // The number of tricks they have won. 
-  pub their_tricks_count: isize,
+    // The number of tricks they have won.
+    pub their_tricks_count: isize,
 
-  // The number of cards in each player's hand.
-  pub hand_sizes: Vec<isize>,  // Invariant: length of 4.
+    // The number of cards in each player's hand.
+    pub hand_sizes: Vec<isize>, // Invariant: length of 4.
 
-  // The previous trick, if there was one. Listed in order from player 1 to
-  // player 4. Inner Option is to support e.g. mis bids, where one player
-  // doesn't play.
-  pub previous_trick: Option<Vec<Option<Play>>>,
+    // The previous trick, if there was one. Listed in order from player 1 to
+    // player 4. Inner Option is to support e.g. mis bids, where one player
+    // doesn't play.
+    pub previous_trick: Option<Vec<Option<types::Play>>>,
 
-  // The ongoing trick. Listed in order from player 1 to player 4.
-  pub current_trick: Vec<Option<Play>>,
+    // The ongoing trick. Listed in order from player 1 to player 4.
+    pub current_trick: Vec<Option<types::Play>>,
 
-  // Index in the player list of the currently-playing player.
-  pub currently_playing_player_index: isize,
+    // Index in the player list of the currently-playing player.
+    pub currently_playing_player_index: isize,
 }
 
 // Background information about the current game (i.e. the current bidding,
 // bidding-won, hands played cycle).
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct GameContext {
-  // The cards in your hand.
-  pub hand: Vec<Card>,
+    // The cards in your hand.
+    pub hand: Vec<types::Card>,
 
-  pub bidding_context: BiddingContext,
+    pub bidding_context: BiddingContext,
 
-  pub winning_bid_context: Option<WinningBidContext>,
+    pub winning_bid_context: Option<WinningBidContext>,
 
-  pub plays_context: Option<PlaysContext>,
+    pub plays_context: Option<PlaysContext>,
 }
 
 // Background information about the session. Sub-contexts are populated as they
 // become valid.
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Context {
-  pub lobby_context: LobbyContext,
+    pub lobby_context: LobbyContext,
 
-  pub match_context: Option<MatchContext>,
+    pub match_context: Option<MatchContext>,
 
-  pub game_context: Option<GameContext>,
+    pub game_context: Option<GameContext>,
 }

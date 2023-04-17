@@ -17,13 +17,13 @@ async fn main() {
         .nth(1)
         .unwrap_or_else(|| "127.0.0.1:8080".to_string());
 
-    let mut rx = web_bridge::connect_to_clients(addr);
+    let mut rx = web_bridge::connect_bridge(addr);
     let mut txs: HashMap<String, web_bridge::StateSender> = HashMap::new();
 
     loop {
         match rx.recv().await {
             // Should be the first message: a response channel.
-            Some(web_bridge::ClientStep {
+            Some(web_bridge::ClientEvent {
                 id,
                 payload: StateSender(tx),
             }) => {
@@ -31,7 +31,7 @@ async fn main() {
             }
 
             // A regular step.
-            Some(web_bridge::ClientStep {
+            Some(web_bridge::ClientEvent {
                 id,
                 payload: Step(_),
             }) => {

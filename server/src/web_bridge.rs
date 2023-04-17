@@ -24,16 +24,16 @@ pub enum ClientPayload {
 }
 
 // The data sent from a client to the game engine.
-pub struct ClientStep {
+pub struct ClientEvent {
     pub id: ClientId,
     pub payload: ClientPayload,
 }
 
 // An async iterator over steps that a client might take.
-pub type Receiver = mpsc::UnboundedReceiver<ClientStep>;
+pub type Receiver = mpsc::UnboundedReceiver<ClientEvent>;
 
 // Connects handles to receive messages from, and to bootstrap outgoing channels to, TCP web clients.
-pub fn connect_to_clients(addr: String) -> Receiver {
+pub fn connect_bridge(addr: String) -> Receiver {
     debug_assert!(!addr.is_empty());
 
     let (tx, rx) = mpsc::unbounded_channel();
@@ -75,7 +75,7 @@ pub fn connect_to_clients(addr: String) -> Receiver {
 fn init_client_socket(
     websocket: tokio_ws2::WebSocketStream<tokio::net::TcpStream>,
     client_id: String,
-    step_tx: mpsc::UnboundedSender<ClientStep>,
+    step_tx: mpsc::UnboundedSender<ClientEvent>,
 ) {
     let (mut write, mut read) = websocket.split();
 
@@ -85,7 +85,7 @@ fn init_client_socket(
     tokio::spawn(async move {
         // Attempt to send the transmitting end of the state channel. If we can't get replies back,
         // abort immediately.
-        let state_tx_payload = ClientStep {
+        let state_tx_payload = ClientEvent {
             id: client_id.clone(),
             payload: ClientPayload::StateSender(state_tx),
         };
@@ -110,7 +110,7 @@ fn init_client_socket(
                 continue;
             };
 
-            let step_payload = ClientStep {
+            let step_payload = ClientEvent {
                 id: client_id.clone(),
                 payload: ClientPayload::Step(step),
             };

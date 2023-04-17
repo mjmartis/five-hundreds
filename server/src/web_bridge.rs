@@ -64,7 +64,14 @@ pub fn connect_to_clients(addr: String) -> Receiver {
     rx
 }
 
-// TODO doc
+// Spawns two non-blocking threads:
+//   1) A thread that transmits JSON payloads from the WebSocket client as steps for the game
+//      engine, and
+//   2) A thread that transmits states from the game engine into JSON payloads for the client to
+//      receive over WebSockets.
+//
+// Before doing anything else, the former thread transmits a special payload to the engine that is
+// used to bootstrap the channel in the latter thread.
 fn init_client_socket(
     websocket: tokio_ws2::WebSocketStream<tokio::net::TcpStream>,
     client_id: String,

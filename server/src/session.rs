@@ -2,6 +2,7 @@
 // match.
 
 use std::collections::HashMap;
+use log::{info, error};
 
 use crate::api;
 use crate::events;
@@ -33,7 +34,7 @@ impl Session {
     pub async fn run_main_loop(self: &mut Self) {
         loop {
             let Some(event) = self.event_rx.recv().await else {
-                // All clients have dropped.
+                info!("All clients dropped - exiting.");
                 return;
             };
 
@@ -45,6 +46,7 @@ impl Session {
                     payload: StateSender(tx),
                 } => {
                     self.client_txs.insert(id.clone(), tx.clone());
+                    info!("New [client {}] registered with engine.", id);
                     continue;
                 },
 
@@ -54,6 +56,7 @@ impl Session {
                     id,
                     payload: Step(api::Step::Leave),
                 } => {
+                    info!("[client {}] left.", id);
                     self.client_txs.remove(id);
                     if self.players.contains(id) {
                         // TODO: send all clients goodbye messages.
@@ -82,15 +85,24 @@ impl Session {
                 // TODO: respect team request.
                 payload: Step(api::Step::Join(_)),
             } => {
+                if self.players.contains(&id) {
+                    self.send_state(&id, api::State::Excluded("Game ongoing".to_string()));
+                    info!("[client {}] excluded because they have already joined.", &id);
+                    return;
+                }
+
                 if self.players.len() == 4 {
                     self.send_state(&id, api::State::Excluded("Game ongoing".to_string()));
+                    info!("[client {}] excluded due to ongoing game.", &id);
                     return;
                 }
 
                 self.players.push(id.clone());
+                info!("[client {}] joined.", &id);
 
                 // All players newly joined.
                 if self.players.len() == 4 {
+                    info!("Starting match.");
                     self.state = InternalState::Bidding;
 
                     // Tell clients that hands have been dealt.
@@ -107,12 +119,13 @@ impl Session {
 
     fn send_state(self: &Self, id: &events::ClientId, state: api::State) {
         let Some(tx) = self.client_txs.get(id) else {
-            // TODO: log "impossible" error.
+            // This is violating an invariant we should have maintained.
+            error!("Attempted to send message to unregistered [client {}].", id);
             return;
         };
 
         if tx.send(state).is_err() {
-            // TODO log error.
+            error!("Engine couldn't send event to [client {}].", id);
         }
     }
 }

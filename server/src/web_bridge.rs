@@ -6,6 +6,7 @@ use std::debug_assert;
 use crate::api;
 use crate::events;
 
+use log::{info, error, debug};
 use futures_util::SinkExt;
 use futures_util::StreamExt;
 use nanoid;
@@ -28,16 +29,22 @@ pub fn connect_bridge(addr: String) -> events::EventReceiver {
         // Listen for TCP requests incoming to the given address.
         let listener = tokio::net::TcpListener::bind(addr.clone())
             .await
-            .expect("Failed to connect to {addr}");
+            .expect("Failed to connect to {addr}.");
 
         loop {
-            // TODO: log connection successes and errors.
-
             // Establish the TCP connection.
-            let Ok((stream, _)) = listener.accept().await else { continue };
+            let Ok((stream, client_addr)) = listener.accept().await else {
+                error!("Couldn't connect to TCP stream.");
+                continue;
+            };
+            info!("Connected to TCP stream at {}.", &client_addr);
 
             // Establish the WebSocket connection.
-            let Ok(websocket) = tokio_ws2::accept_async(stream).await else { continue };
+            let Ok(websocket) = tokio_ws2::accept_async(stream).await else {
+                error!("Couldn't establish WebSocket connection with {}.", &client_addr);
+                continue;
+            };
+            info!("WebSocket connection established with {}.", &client_addr);
 
             init_client_socket(websocket, client_id.clone(), tx.clone());
         }
@@ -64,46 +71,41 @@ fn init_client_socket(
     // Spawn a thread that transmits messages from the web socket to the game engine. Start with a
     // special message that contains the state sender.
     let (state_tx, mut state_rx) = mpsc::unbounded_channel();
+    let client_id_in = client_id.clone();
     tokio::spawn(async move {
         // Attempt to send the transmitting end of the state channel. If we can't get replies back,
         // abort immediately.
         let state_tx_payload = events::ClientEvent {
-            id: client_id.clone(),
+            id: client_id_in.clone(),
             payload: events::ClientPayload::StateSender(state_tx),
         };
         if step_tx.send(state_tx_payload).is_err() {
-            // TODO log error.
+            error!("Couldn't send reply channel for [client {}].", &client_id_in);
             return;
         }
 
         loop {
             let Some(result) = read.next().await else {
-                // The connection has been closed by the client. We send a synthetic "leave" step
-                // so that the game engine is aware of the departure.
-                let step_payload = events::ClientEvent {
-                    id: client_id.clone(),
-                    payload: events::ClientPayload::Step(api::Step::Leave),
-                };
-                step_tx.send(step_payload);
+                info!("WebSocket connection closed by [client {}].", &client_id_in);
                 return;
             };
 
             let Ok(ws2::Message::Text(json)) = result else {
-                // TODO log tcp error.
+                error!("Malformed message sent from [client {}].", &client_id_in);
                 continue;
             };
 
             let Ok(step) = serde_json::from_str(&json) else {
-                // TODO log malformed error. Transmit error state?
+                error!("Malformed JSON sent from [client {}].", &client_id_in);
                 continue;
             };
 
             let step_payload = events::ClientEvent {
-                id: client_id.clone(),
+                id: client_id_in.clone(),
                 payload: events::ClientPayload::Step(step),
             };
             if step_tx.send(step_payload).is_err() {
-                // The connection has been closed by the server.
+                debug!("Channel to [client {}] closed by the engine.", &client_id_in);
                 return;
             }
         }
@@ -111,15 +113,16 @@ fn init_client_socket(
 
     // Spawn a thread that transmits state messages sent from the game engine (through the
     // bootstrapped state pipe) to the web socket.
+    let client_id_out = client_id.clone();
     tokio::spawn(async move {
         loop {
             let Some(state) = state_rx.recv().await else {
-                // The connection has been closed.
+                debug!("Channel to [client {}] closed by the engine.", &client_id_out);
                 break;
             };
 
             if write.send(state_to_msg(&state)).await.is_err() {
-                // TODO log error.
+                error!("Failed to send message to WebSocket for [client {}].", &client_id_out);
                 return;
             }
         }

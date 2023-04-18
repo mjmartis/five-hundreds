@@ -25,4 +25,3 @@ pub type EventReceiver = mpsc::UnboundedReceiver<ClientEvent>;
 
 // An async transmitter used to send states to a client.
 pub type StateSender = mpsc::UnboundedSender<api::State>;
-

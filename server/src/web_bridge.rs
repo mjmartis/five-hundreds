@@ -78,7 +78,13 @@ fn init_client_socket(
 
         loop {
             let Some(result) = read.next().await else {
-                // The connection has been closed by the client.
+                // The connection has been closed by the client. We send a synthetic "leave" step
+                // so that the game engine is aware of the departure.
+                let step_payload = events::ClientEvent {
+                    id: client_id.clone(),
+                    payload: events::ClientPayload::Step(api::Step::Leave),
+                };
+                step_tx.send(step_payload);
                 return;
             };
 

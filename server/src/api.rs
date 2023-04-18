@@ -11,10 +11,7 @@ pub enum Step {
     Poll,
 
     // Ask to join.
-    //
-    // The first argument is the index of the team to join (i.e. in [0, 1]).
-    // The second argument, non-empty, is a token used to rejoin an ongoing game.
-    Join(isize, String),
+    Join(isize), // The index of the team to join (i.e. in [0, 1]).
 
     // Make a bid.
     MakeBid(types::Bid),

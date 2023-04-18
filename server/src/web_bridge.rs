@@ -4,6 +4,7 @@
 use std::debug_assert;
 
 use crate::api;
+use crate::events;
 
 use futures_util::SinkExt;
 use futures_util::StreamExt;
@@ -13,27 +14,8 @@ use tokio::sync::mpsc;
 use tokio_tungstenite as tokio_ws2;
 use tokio_ws2::tungstenite as ws2;
 
-// Unique ID used to identify new and resuming clients from the game engine.
-pub type ClientId = String;
-
-// Either a step, or a handle with which the game engine should reply to the client.
-pub type StateSender = mpsc::UnboundedSender<api::State>;
-pub enum ClientPayload {
-    Step(api::Step),
-    StateSender(StateSender),
-}
-
-// The data sent from a client to the game engine.
-pub struct ClientEvent {
-    pub id: ClientId,
-    pub payload: ClientPayload,
-}
-
-// An async iterator over steps that a client might take.
-pub type Receiver = mpsc::UnboundedReceiver<ClientEvent>;
-
 // Connects handles to receive messages from, and to bootstrap outgoing channels to, TCP web clients.
-pub fn connect_bridge(addr: String) -> Receiver {
+pub fn connect_bridge(addr: String) -> events::EventReceiver {
     debug_assert!(!addr.is_empty());
 
     let (tx, rx) = mpsc::unbounded_channel();
@@ -74,8 +56,8 @@ pub fn connect_bridge(addr: String) -> Receiver {
 // used to bootstrap the channel in the latter thread.
 fn init_client_socket(
     websocket: tokio_ws2::WebSocketStream<tokio::net::TcpStream>,
-    client_id: String,
-    step_tx: mpsc::UnboundedSender<ClientEvent>,
+    client_id: events::ClientId,
+    step_tx: mpsc::UnboundedSender<events::ClientEvent>,
 ) {
     let (mut write, mut read) = websocket.split();
 
@@ -85,9 +67,9 @@ fn init_client_socket(
     tokio::spawn(async move {
         // Attempt to send the transmitting end of the state channel. If we can't get replies back,
         // abort immediately.
-        let state_tx_payload = ClientEvent {
+        let state_tx_payload = events::ClientEvent {
             id: client_id.clone(),
-            payload: ClientPayload::StateSender(state_tx),
+            payload: events::ClientPayload::StateSender(state_tx),
         };
         if step_tx.send(state_tx_payload).is_err() {
             // TODO log error.
@@ -110,9 +92,9 @@ fn init_client_socket(
                 continue;
             };
 
-            let step_payload = ClientEvent {
+            let step_payload = events::ClientEvent {
                 id: client_id.clone(),
-                payload: ClientPayload::Step(step),
+                payload: events::ClientPayload::Step(step),
             };
             if step_tx.send(step_payload).is_err() {
                 // The connection has been closed by the server.

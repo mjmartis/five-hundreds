@@ -6,12 +6,14 @@ use crate::api;
 use tokio::sync::mpsc;
 
 // Unique ID used to identify new and resuming clients from the game engine.
-pub type ClientId = String;
+pub type ClientId = u128;
 
-// Either a step, or a handle with which the game engine should reply to the client.
+// The events that could originate from the client. Notably, one option is a handle with which the
+// game engine should subsequently reply to the client.
 pub enum ClientPayload {
     Step(api::Step),
     StateSender(StateSender),
+    Disconnect,
 }
 
 // The data sent from a client to the game engine.

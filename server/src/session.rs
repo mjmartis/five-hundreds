@@ -1,34 +1,38 @@
 // The top-level instance of a 500s session. Coordinates the lobby, bidding and gameplay for one
 // match.
 
+use log::{error, info};
 use std::collections::HashMap;
-use log::{info, error};
 
 use crate::api;
 use crate::events;
-use crate::types;
+use crate::events::ClientPayload::Disconnect;
 use crate::events::ClientPayload::StateSender;
 use crate::events::ClientPayload::Step;
-
+use crate::types;
 
 pub struct Session {
     event_rx: events::EventReceiver,
     client_txs: HashMap<events::ClientId, events::StateSender>,
 
     // TODO: break this data out into objects that can be shared.
-
     state: InternalState,
 
     // The client IDs of playing players. There can be clients who aren't players, for example when
     // they are unsuccessfully trying to join a full game.
     //
     // TODO: support leaving and rejoining.
-    players: Vec<String>,
+    players: Vec<events::ClientId>,
 }
 
 impl Session {
     pub fn new(event_rx: events::EventReceiver) -> Self {
-        Self { event_rx, client_txs: HashMap::new(), state: InternalState::Lobby, players: Vec::new() }
+        Self {
+            event_rx,
+            client_txs: HashMap::new(),
+            state: InternalState::Lobby,
+            players: Vec::new(),
+        }
     }
 
     pub async fn run_main_loop(self: &mut Self) {
@@ -45,60 +49,64 @@ impl Session {
                     id,
                     payload: StateSender(tx),
                 } => {
-                    self.client_txs.insert(id.clone(), tx.clone());
+                    self.client_txs.insert(*id, tx.clone());
                     info!("New [client {}] registered with engine.", id);
                     continue;
-                },
+                }
 
-                // A client has left. This might end the game if they are an active player.
-                // player.
                 events::ClientEvent {
                     id,
-                    payload: Step(api::Step::Leave),
+                    payload: Disconnect,
                 } => {
-                    info!("[client {}] left.", id);
                     self.client_txs.remove(id);
+
                     if self.players.contains(id) {
                         // TODO: send all clients goodbye messages.
-                        return;
+                        info!("Player [client {}] disconnected.", id);
+                        self.state = InternalState::MatchAborted;
                     }
-                },
+                }
 
-                _ => {},
+                _ => {}
             };
 
             // Otherwise, delegate logic to specialised handlers.
             // TODO: break this logic out into separate objects.
             match &self.state {
                 InternalState::Lobby => self.process_lobby_step(event),
-                _ => continue,
+                InternalState::MatchAborted => {
+                    self.send_state(
+                        &event.id,
+                        api::State::MatchAborted("Player left.".to_string()),
+                    );
+                }
+                _ => {}
             }
-
-        };
+        }
     }
 
     fn process_lobby_step(self: &mut Self, event: events::ClientEvent) {
-        match event {
+        match &event {
             // A client is attempting to join.
             events::ClientEvent {
                 id,
                 // TODO: respect team request.
                 payload: Step(api::Step::Join(_)),
             } => {
-                if self.players.contains(&id) {
-                    self.send_state(&id, api::State::Excluded("Game ongoing".to_string()));
-                    info!("[client {}] excluded because they have already joined.", &id);
+                if self.players.contains(id) {
+                    self.send_state(id, api::State::Excluded("Already joined.".to_string()));
+                    info!("[client {}] excluded because they have already joined.", id);
                     return;
                 }
 
                 if self.players.len() == 4 {
-                    self.send_state(&id, api::State::Excluded("Game ongoing".to_string()));
-                    info!("[client {}] excluded due to ongoing game.", &id);
+                    self.send_state(id, api::State::Excluded("Game ongoing.".to_string()));
+                    info!("[client {}] excluded due to ongoing game.", id);
                     return;
                 }
 
-                self.players.push(id.clone());
-                info!("[client {}] joined.", &id);
+                self.players.push(*id);
+                info!("[client {}] joined.", id);
 
                 // All players newly joined.
                 if self.players.len() == 4 {
@@ -111,9 +119,28 @@ impl Session {
                         self.send_state(out_id, api::State::HandDealt);
                     }
                 }
-            },
+            }
 
-            _ => {},
+            // A client has left. This might end the game if they are an active player.
+            // player.
+            events::ClientEvent {
+                id,
+                payload: Step(api::Step::Quit),
+            } => {
+                if self.players.contains(id) {
+                    // TODO: send all clients goodbye messages.
+                    info!("Player [client {}] left.", id);
+                    self.state = InternalState::MatchAborted;
+                } else {
+                    info!("[client {}] tried to leave without joining.", id);
+                    self.send_state(
+                        id,
+                        api::State::Error("Tried to leave without joining.".to_string()),
+                    );
+                }
+            }
+
+            _ => {}
         };
     }
 
@@ -135,4 +162,5 @@ enum InternalState {
     Bidding,
     BidWon,
     Game,
+    MatchAborted,
 }

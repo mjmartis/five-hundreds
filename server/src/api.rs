@@ -26,7 +26,7 @@ pub enum Step {
     MakePlay(types::Play),
 
     // Exit the match early.
-    Leave,
+    Quit,
 }
 
 // The state that the session can be in.
@@ -98,7 +98,7 @@ pub enum State {
     MatchAborted(String), // Reason.
 
     // Some other in-game error (e.g. tried to play an invalid card).
-    MatchError(String), // Reason.
+    Error(String), // Reason.
 }
 
 // Static info.

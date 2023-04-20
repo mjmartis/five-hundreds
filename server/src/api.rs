@@ -33,7 +33,7 @@ pub enum Step {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum State {
     // You or another player have just joined.
-    // Player count, your index and your resume token are stored in context struct.
+    // Player count, your index and your resume token are stored in history struct.
     // TODO: transmit e.g. player names.
     PlayerJoined,
 
@@ -41,22 +41,22 @@ pub enum State {
     Excluded(String), // Reason.
 
     // Your hand has been dealt.
-    // types::Card vector of length 10 stored in context struct.
+    // types::Card vector of length 10 stored in history struct.
     HandDealt,
 
     // Your turn to bid.
     WaitingForYourBid(Vec<types::Bid>), // Bids available to you.
 
     // Waiting for another player to bid.
-    // Current bidder stored in context struct.
+    // Current bidder stored in history struct.
     WaitingForTheirBid,
 
     // Another player has bid.
-    // Their bid stored in context struct.
+    // Their bid stored in history struct.
     TheyBid(isize), // The player who made their bid.
 
     // A player (possibly you) has won the bid.
-    // Winning player stored in context struct.
+    // Winning player stored in history struct.
     BidWon,
 
     // When you must choose how to use the kitty (i.e. you have won the bid).
@@ -72,14 +72,14 @@ pub enum State {
     WaitingForTheirJokerSuit,
 
     // When they announce the suit of their joker.
-    // types::Suit stored in context struct.
+    // types::Suit stored in history struct.
     JokerSuitAnnounced,
 
     // Waiting for you to choose a card to play.
     WaitingForYourPlay(Vec<types::Play>),
 
     // Waiting for another player to play.
-    // Current playing player (and trick so far) stored in context struct.
+    // Current playing player (and trick so far) stored in history struct.
     WaitingForTheirPlay,
 
     // You or another player has won the trick.
@@ -88,7 +88,7 @@ pub enum State {
     // Your or the other team have won the game.
     GameWon(isize), // Index of winning team (i.e. in [0, 1]).
 
-    // The new scores have been included in the context struct.
+    // The new scores have been included in the history struct.
     ScoresUpdated,
 
     // A team has won the entire match.
@@ -105,7 +105,7 @@ pub enum State {
 
 // Background information about the lobby.
 #[derive(Debug, Serialize, Deserialize)]
-pub struct LobbyContext {
+pub struct LobbyHistory {
     // Number of players currently joined.
     pub players_count: isize,
 
@@ -118,7 +118,7 @@ pub struct LobbyContext {
 
 // Background information about the match.
 #[derive(Debug, Serialize, Deserialize)]
-pub struct MatchContext {
+pub struct MatchHistory {
     // Game history. TODO make more sophisticated.
     //   (team 1 score delta, team 1 score total,
     //    team 2 score delta, team 2 score total).
@@ -127,7 +127,7 @@ pub struct MatchContext {
 
 // Background information about the bidding.
 #[derive(Debug, Serialize, Deserialize)]
-pub struct BiddingContext {
+pub struct BiddingHistory {
     // The last bids made by each player. Ordered from player 1 to player 4.
     pub bids: Vec<Option<types::Bid>>, // Invariant: length of 4.
 
@@ -136,7 +136,7 @@ pub struct BiddingContext {
 
 // Background information about the bid that won.
 #[derive(Debug, Serialize, Deserialize)]
-pub struct WinningBidContext {
+pub struct WinningBidHistory {
     pub winning_bidder_index: isize,
 
     pub winning_bid: types::Bid, // Invariant: not a Pass.
@@ -144,7 +144,7 @@ pub struct WinningBidContext {
 
 // Background information about the tricks being played.
 #[derive(Debug, Serialize, Deserialize)]
-pub struct PlaysContext {
+pub struct PlaysHistory {
     // The joker suit, if fixed.
     pub joker_suit: Option<types::Suit>,
 
@@ -172,24 +172,23 @@ pub struct PlaysContext {
 // Background information about the current game (i.e. the current bidding,
 // bidding-won, hands played cycle).
 #[derive(Debug, Serialize, Deserialize)]
-pub struct GameContext {
+pub struct GameHistory {
     // The cards in your hand.
     pub hand: Vec<types::Card>,
 
-    pub bidding_context: BiddingContext,
+    pub bidding_history: BiddingHistory,
 
-    pub winning_bid_context: Option<WinningBidContext>,
+    pub winning_bid_history: Option<WinningBidHistory>,
 
-    pub plays_context: Option<PlaysContext>,
+    pub plays_history: Option<PlaysHistory>,
 }
 
-// Background information about the session. Sub-contexts are populated as they
-// become valid.
+// Background information about the session. Sub-structs are populated as they become valid.
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Context {
-    pub lobby_context: LobbyContext,
+pub struct History {
+    pub lobby_history: LobbyHistory,
 
-    pub match_context: Option<MatchContext>,
+    pub match_history: Option<MatchHistory>,
 
-    pub game_context: Option<GameContext>,
+    pub game_history: Option<GameHistory>,
 }

@@ -1,7 +1,6 @@
 // The top-level instance of a 500s session. Coordinates the lobby, bidding and gameplay for one
 // match.
 
-use log::{error, info};
 use std::collections::HashMap;
 
 use crate::api;
@@ -10,6 +9,8 @@ use crate::events::ClientEventPayload::Disconnect;
 use crate::events::ClientEventPayload::EngineEventSender;
 use crate::events::ClientEventPayload::Step;
 use crate::types;
+
+use log::{error, info};
 
 pub struct Session {
     event_rx: events::ClientEventReceiver,
@@ -64,6 +65,7 @@ impl Session {
                         // TODO: send all clients goodbye messages.
                         info!("Player [client {}] disconnected.", id);
                         self.state = InternalState::MatchAborted;
+                        continue;
                     }
                 }
 

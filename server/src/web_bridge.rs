@@ -135,7 +135,7 @@ fn init_client_socket(
         loop {
             let Some(state) = state_rx.recv().await else {
                 debug!("Channel to [client {}] closed by the engine.", client_id);
-                break;
+                return;
             };
 
             // We assume our internal data structures can be serialized, and are willing to

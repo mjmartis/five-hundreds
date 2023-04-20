@@ -6,14 +6,14 @@ use std::collections::HashMap;
 
 use crate::api;
 use crate::events;
-use crate::events::ClientPayload::Disconnect;
-use crate::events::ClientPayload::StateSender;
-use crate::events::ClientPayload::Step;
+use crate::events::ClientEventPayload::Disconnect;
+use crate::events::ClientEventPayload::EngineEventSender;
+use crate::events::ClientEventPayload::Step;
 use crate::types;
 
 pub struct Session {
-    event_rx: events::EventReceiver,
-    client_txs: HashMap<events::ClientId, events::StateSender>,
+    event_rx: events::ClientEventReceiver,
+    client_txs: HashMap<events::ClientId, events::EngineEventSender>,
 
     // TODO: break this data out into objects that can be shared.
     state: InternalState,
@@ -26,7 +26,7 @@ pub struct Session {
 }
 
 impl Session {
-    pub fn new(event_rx: events::EventReceiver) -> Self {
+    pub fn new(event_rx: events::ClientEventReceiver) -> Self {
         Self {
             event_rx,
             client_txs: HashMap::new(),
@@ -47,7 +47,7 @@ impl Session {
                 // New response channel received.
                 events::ClientEvent {
                     id,
-                    payload: StateSender(tx),
+                    payload: EngineEventSender(tx),
                 } => {
                     self.client_txs.insert(*id, tx.clone());
                     info!("New [client {}] registered with engine.", id);

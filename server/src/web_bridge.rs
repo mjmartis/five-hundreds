@@ -17,8 +17,9 @@ use unique_id;
 use unique_id::random::RandomGenerator;
 use unique_id::Generator;
 
-// Connects handles to receive messages from, and to bootstrap outgoing channels to, TCP web clients.
-pub fn connect_bridge(addr: String) -> events::EventReceiver {
+// Connects a handle to receive messages from TCP web clients. One type of message is a
+// "transmitter" message that lets the handler send messages back to clients.
+pub fn connect_bridge(addr: String) -> events::ClientEventReceiver {
     debug_assert!(!addr.is_empty());
 
     let (tx, rx) = mpsc::unbounded_channel();
@@ -67,8 +68,8 @@ pub fn connect_bridge(addr: String) -> events::EventReceiver {
 //   2) A thread that transmits states from the game engine into JSON payloads for the client to
 //      receive over WebSockets.
 //
-// Before doing anything else, the former thread transmits a special payload to the engine that is
-// used to bootstrap the channel in the latter thread.
+// Before doing anything else, the former thread transmits a special "transmitter" payload that the
+// engine can use to send its states to the latter thread.
 fn init_client_socket(
     websocket: tokio_ws2::WebSocketStream<tokio::net::TcpStream>,
     client_id: events::ClientId,
@@ -84,7 +85,7 @@ fn init_client_socket(
         // abort immediately.
         let state_tx_payload = events::ClientEvent {
             id: client_id,
-            payload: events::ClientPayload::StateSender(state_tx),
+            payload: events::ClientEventPayload::EngineEventSender(state_tx),
         };
         if step_tx.send(state_tx_payload).is_err() {
             error!("Couldn't send reply channel for [client {}].", client_id);
@@ -97,9 +98,12 @@ fn init_client_socket(
 
                 let disconnect_payload = events::ClientEvent {
                     id: client_id,
-                    payload: events::ClientPayload::Disconnect,
+                    payload: events::ClientEventPayload::Disconnect,
                 };
-                step_tx.send(disconnect_payload);
+                if step_tx.send(disconnect_payload).is_err() {
+                    debug!("Channel to [client {}] closed by the engine.", client_id);
+                }
+
                 return;
             };
 
@@ -115,7 +119,7 @@ fn init_client_socket(
 
             let step_payload = events::ClientEvent {
                 id: client_id,
-                payload: events::ClientPayload::Step(step),
+                payload: events::ClientEventPayload::Step(step),
             };
             if step_tx.send(step_payload).is_err() {
                 debug!("Channel to [client {}] closed by the engine.", client_id);
@@ -124,8 +128,9 @@ fn init_client_socket(
         }
     });
 
-    // Spawn a thread that transmits state messages sent from the game engine (through the
-    // bootstrapped state pipe) to the web socket.
+    // Spawn a thread that transmits state messages sent from the game engine to the web socket.
+    // The engine can transmit these messages after it has been passed a handle through the initial
+    // "transmitter" message.
     tokio::spawn(async move {
         loop {
             let Some(state) = state_rx.recv().await else {
@@ -133,7 +138,10 @@ fn init_client_socket(
                 break;
             };
 
-            if write.send(state_to_msg(&state)).await.is_err() {
+            // We assume our internal data structures can be serialized, and are willing to
+            // crash if not.
+            let msg = ws2::Message::Text(serde_json::to_string(&state).unwrap());
+            if write.send(msg).await.is_err() {
                 error!(
                     "Failed to send message to WebSocket for [client {}].",
                     client_id
@@ -142,10 +150,4 @@ fn init_client_socket(
             }
         }
     });
-}
-
-fn state_to_msg(state: &api::State) -> ws2::Message {
-    // We assume our internal data structures can be serialized, and are willing to
-    // crash if not.
-    ws2::Message::Text(serde_json::to_string(&state).unwrap())
 }

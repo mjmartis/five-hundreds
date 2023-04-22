@@ -1,12 +1,10 @@
 // The top-level instance of a 500s session. Coordinates the lobby, bidding and gameplay for one
 // match.
 
-use std::collections::HashMap;
-
 use crate::api;
 use crate::events;
+use crate::events::ClientEventPayload::Connect;
 use crate::events::ClientEventPayload::Disconnect;
-use crate::events::ClientEventPayload::EngineEventSender;
 use crate::events::ClientEventPayload::Step;
 use crate::types;
 
@@ -14,25 +12,30 @@ use log::{error, info};
 
 pub struct Session {
     event_rx: events::ClientEventReceiver,
-    client_txs: HashMap<events::ClientId, events::EngineEventSender>,
+    clients: events::ClientMap,
 
     // TODO: break this data out into objects that can be shared.
     state: InternalState,
 
-    // The client IDs of playing players. There can be clients who aren't players, for example when
-    // they are unsuccessfully trying to join a full game.
+    // The client IDs of each playing player. There can be clients who aren't players, for example
+    // when they are unsuccessfully trying to join a full game.
     //
     // TODO: support leaving and rejoining.
     players: Vec<events::ClientId>,
+
+    // The histories for each playing player. This vector is always equal in size to the players
+    // vector.
+    histories: Vec<api::History>,
 }
 
 impl Session {
     pub fn new(event_rx: events::ClientEventReceiver) -> Self {
         Self {
             event_rx,
-            client_txs: HashMap::new(),
+            clients: events::ClientMap::new(),
             state: InternalState::Lobby,
             players: Vec::new(),
+            histories: Vec::new(),
         }
     }
 
@@ -48,10 +51,10 @@ impl Session {
                 // New response channel received.
                 events::ClientEvent {
                     id,
-                    payload: EngineEventSender(tx),
+                    payload: Connect(tx),
                 } => {
-                    self.client_txs.insert(*id, tx.clone());
-                    info!("New [client {}] registered with engine.", id);
+                    self.clients.add_client(id, tx.clone());
+                    info!("New [client {}] connected to engine.", id);
                     continue;
                 }
 
@@ -59,8 +62,7 @@ impl Session {
                     id,
                     payload: Disconnect,
                 } => {
-                    self.client_txs.remove(id);
-
+                    self.clients.remove_client(id);
                     if self.players.contains(id) {
                         // TODO: send all clients goodbye messages.
                         info!("Player [client {}] disconnected.", id);
@@ -77,9 +79,10 @@ impl Session {
             match &self.state {
                 InternalState::Lobby => self.process_lobby_step(event),
                 InternalState::MatchAborted => {
-                    self.send_state(
+                    self.clients.send_event(
                         &event.id,
-                        api::State::MatchAborted("Player left.".to_string()),
+                        self.player_history(&event.id),
+                        api::CurrentState::MatchAborted("Player left.".to_string()),
                     );
                 }
                 _ => {}
@@ -96,18 +99,27 @@ impl Session {
                 payload: Step(api::Step::Join(_)),
             } => {
                 if self.players.contains(id) {
-                    self.send_state(id, api::State::Excluded("Already joined.".to_string()));
+                    self.clients.send_event(
+                        id,
+                        self.player_history(id),
+                        api::CurrentState::Excluded("Already joined.".to_string()),
+                    );
                     info!("[client {}] excluded because they have already joined.", id);
                     return;
                 }
 
                 if self.players.len() == 4 {
-                    self.send_state(id, api::State::Excluded("Game ongoing.".to_string()));
+                    self.clients.send_event(
+                        id,
+                        self.player_history(id),
+                        api::CurrentState::Excluded("Game ongoing.".to_string()),
+                    );
                     info!("[client {}] excluded due to ongoing game.", id);
                     return;
                 }
 
                 self.players.push(*id);
+                self.histories.push(Default::default());
                 info!("[client {}] joined.", id);
 
                 // All players newly joined.
@@ -117,8 +129,12 @@ impl Session {
 
                     // Tell clients that hands have been dealt.
                     // TODO: stop lying to them.
-                    for out_id in &self.players {
-                        self.send_state(out_id, api::State::HandDealt);
+                    for i in 0..self.players.len() {
+                        self.clients.send_event(
+                            &self.players[i],
+                            Some(self.histories[i].clone()),
+                            api::CurrentState::HandDealt,
+                        );
                     }
                 }
             }
@@ -135,9 +151,10 @@ impl Session {
                     self.state = InternalState::MatchAborted;
                 } else {
                     info!("[client {}] tried to leave without joining.", id);
-                    self.send_state(
+                    self.clients.send_event(
                         id,
-                        api::State::Error("Tried to leave without joining.".to_string()),
+                        self.player_history(id),
+                        api::CurrentState::Error("Tried to leave without joining.".to_string()),
                     );
                 }
             }
@@ -146,16 +163,14 @@ impl Session {
         };
     }
 
-    fn send_state(self: &Self, id: &events::ClientId, state: api::State) {
-        let Some(tx) = self.client_txs.get(id) else {
-            // This is violating an invariant we should have maintained.
-            error!("Attempted to send message to unregistered [client {}].", id);
-            return;
-        };
-
-        if tx.send(state).is_err() {
-            error!("Engine couldn't send event to [client {}].", id);
+    fn player_history(self: &Self, id: &events::ClientId) -> Option<api::History> {
+        for i in 0..self.players.len() {
+            if self.players[i] == *id {
+                return Some(self.histories[i].clone());
+            }
         }
+
+        None
     }
 }
 

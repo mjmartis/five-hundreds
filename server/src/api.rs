@@ -29,9 +29,9 @@ pub enum Step {
     Quit,
 }
 
-// The state that the session can be in.
+// The most recent state that the session is in.
 #[derive(Debug, Serialize, Deserialize)]
-pub enum State {
+pub enum CurrentState {
     // You or another player have just joined.
     // Player count, your index and your resume token are stored in history struct.
     // TODO: transmit e.g. player names.
@@ -104,10 +104,10 @@ pub enum State {
 // Static info.
 
 // Background information about the lobby.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct LobbyHistory {
     // Number of players currently joined.
-    pub players_count: isize,
+    pub player_count: isize,
 
     // Your index in the player list.
     pub your_player_index: isize,
@@ -117,7 +117,7 @@ pub struct LobbyHistory {
 }
 
 // Background information about the match.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MatchHistory {
     // Game history. TODO make more sophisticated.
     //   (team 1 score delta, team 1 score total,
@@ -126,7 +126,7 @@ pub struct MatchHistory {
 }
 
 // Background information about the bidding.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BiddingHistory {
     // The last bids made by each player. Ordered from player 1 to player 4.
     pub bids: Vec<Option<types::Bid>>, // Invariant: length of 4.
@@ -135,7 +135,7 @@ pub struct BiddingHistory {
 }
 
 // Background information about the bid that won.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WinningBidHistory {
     pub winning_bidder_index: isize,
 
@@ -143,7 +143,7 @@ pub struct WinningBidHistory {
 }
 
 // Background information about the tricks being played.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlaysHistory {
     // The joker suit, if fixed.
     pub joker_suit: Option<types::Suit>,
@@ -171,7 +171,7 @@ pub struct PlaysHistory {
 
 // Background information about the current game (i.e. the current bidding,
 // bidding-won, hands played cycle).
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GameHistory {
     // The cards in your hand.
     pub hand: Vec<types::Card>,
@@ -184,11 +184,20 @@ pub struct GameHistory {
 }
 
 // Background information about the session. Sub-structs are populated as they become valid.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct History {
     pub lobby_history: LobbyHistory,
 
     pub match_history: Option<MatchHistory>,
 
     pub game_history: Option<GameHistory>,
+}
+
+// Top level state information sent to the client.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct State {
+    pub state: CurrentState,
+
+    // Only populated if the client is a player.
+    pub history: Option<History>,
 }

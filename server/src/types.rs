@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub enum Suit {
     Spades,
     Clubs,
@@ -10,13 +10,13 @@ pub enum Suit {
     Hearts,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub enum BidSuit {
     Suit(Suit),
     NoTrumps,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub enum Bid {
     Tricks(isize, BidSuit),
     Mis,
@@ -24,7 +24,7 @@ pub enum Bid {
     Pass,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub enum Face {
     Number(isize), // Invariant: in [4..10].
     Jack,
@@ -33,20 +33,20 @@ pub enum Face {
     Ace,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct SuitedCard {
     pub face: Face,
     pub suit: Suit,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub enum Card {
     SuitedCard(SuitedCard),
     Joker,
 }
 
 // A card played on a turn. The joker is assigned its effective suit.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub enum Play {
     SuitedCard(SuitedCard),
     Joker(Suit),

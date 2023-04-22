@@ -85,7 +85,7 @@ fn init_client_socket(
         // abort immediately.
         let state_tx_payload = events::ClientEvent {
             id: client_id,
-            payload: events::ClientEventPayload::EngineEventSender(state_tx),
+            payload: events::ClientEventPayload::Connect(state_tx),
         };
         if step_tx.send(state_tx_payload).is_err() {
             error!("Couldn't send reply channel for [client {}].", client_id);

@@ -8,11 +8,9 @@ use crate::events;
 use futures_util::SinkExt;
 use futures_util::StreamExt;
 use log::{debug, error, info};
-use serde_json;
 use tokio::sync::mpsc;
 use tokio_tungstenite as tokio_ws2;
 use tokio_ws2::tungstenite as ws2;
-use unique_id;
 use unique_id::random::RandomGenerator;
 use unique_id::Generator;
 

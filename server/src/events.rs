@@ -43,16 +43,16 @@ impl ClientMap {
         }
     }
 
-    pub fn add_client(self: &mut Self, id: &ClientId, tx: EngineEventSender) {
-        self.client_txs.insert(*id, tx.clone());
+    pub fn add_client(&mut self, id: &ClientId, tx: EngineEventSender) {
+        self.client_txs.insert(*id, tx);
     }
 
-    pub fn remove_client(self: &mut Self, id: &ClientId) {
+    pub fn remove_client(&mut self, id: &ClientId) {
         self.client_txs.remove(id);
     }
 
     pub fn send_event(
-        self: &Self,
+        &self,
         id: &ClientId,
         history: Option<api::History>,
         state: api::CurrentState,

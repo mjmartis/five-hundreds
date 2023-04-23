@@ -1,8 +1,8 @@
-mod lobby;
 mod aborted;
+mod lobby;
 
-pub use self::lobby::Lobby;
 pub use self::aborted::Aborted;
+pub use self::lobby::Lobby;
 
 use crate::api;
 use crate::events;

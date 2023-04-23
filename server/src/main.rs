@@ -3,10 +3,10 @@
 
 use std::env;
 
-mod stages;
 mod api;
 mod events;
 mod session;
+mod stages;
 mod types;
 mod web_bridge;
 

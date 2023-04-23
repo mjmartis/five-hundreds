@@ -19,14 +19,10 @@ impl super::Stage for Aborted {
         clients.send_event(
             client_id,
             // Include player history if this client is a valid player.
-            if let Some(i) = player_index {
-                Some(players[i].1.clone())
-            } else {
-                None
-            },
+            player_index.map(|i| players[i].1.clone()),
             api::CurrentState::MatchAborted("Player left.".to_string()),
         );
 
-        return self;
+        self
     }
 }

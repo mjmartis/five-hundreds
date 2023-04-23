@@ -1,6 +1,8 @@
 // The top-level instance of a 500s session. Coordinates the lobby, bidding and gameplay for one
 // match.
 
+use std::debug_assert;
+
 use crate::api;
 use crate::events;
 use crate::events::ClientEventPayload::Connect;
@@ -38,7 +40,7 @@ impl Session {
         }
     }
 
-    pub async fn run_main_loop(self: &mut Self) {
+    pub async fn run_main_loop(&mut self) {
         loop {
             let Some(event) = self.event_rx.recv().await else {
                 info!("All clients dropped - exiting.");
@@ -62,7 +64,7 @@ impl Session {
                     payload: Disconnect,
                 } => {
                     self.clients.remove_client(id);
-                    if let Some(_) = self.player_index(id) {
+                    if self.player_index(id).is_some() {
                         // TODO: send all clients goodbye messages.
                         info!("Player [client {}] disconnected.", id);
                         self.stage = Some(Box::new(stages::Aborted {}));
@@ -80,6 +82,7 @@ impl Session {
 
                     // Give up and then retake ownership of the stage object.
                     let stage = self.stage.take();
+                    debug_assert!(stage.is_some());
                     self.stage = Some(stage.unwrap().process_step(
                         &mut self.players,
                         player_index,
@@ -92,11 +95,11 @@ impl Session {
         }
     }
 
-    fn player_index(self: &Self, id: &events::ClientId) -> Option<usize> {
+    fn player_index(&self, id: &events::ClientId) -> Option<usize> {
         self.players.iter().position(|(i, _)| i == id)
     }
 
-    fn player_history(self: &Self, id: &events::ClientId) -> Option<api::History> {
+    fn player_history(&self, id: &events::ClientId) -> Option<api::History> {
         if let Some(i) = self.player_index(id) {
             return Some(self.players[i].1.clone());
         }

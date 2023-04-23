@@ -65,14 +65,14 @@ impl super::Stage for Lobby {
                     return Box::new(aborted::Aborted {});
                 }
 
-                return self;
+                self
             }
 
             // A client has left. This might end the game if they are an active player.
             // player.
             api::Step::Quit => {
                 // Active player has left.
-                if let Some(_) = player_index {
+                if player_index.is_some() {
                     // TODO: send all clients goodbye messages.
                     info!("Player [client {}] left.", client_id);
                     return Box::new(aborted::Aborted {});
@@ -83,15 +83,15 @@ impl super::Stage for Lobby {
                         None,
                         api::CurrentState::Error("Tried to leave without joining.".to_string()),
                     );
-
-                    return self;
                 }
+
+                self
             }
 
             _ => {
-                // TODO return "unexpected step" error.
-                return self;
+                // TODO emit "unexpected step" error.
+                self
             }
-        };
+        }
     }
 }

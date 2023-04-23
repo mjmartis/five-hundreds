@@ -42,7 +42,7 @@ impl Bidding {
                 plays_history: None,
             });
 
-            // Send off hands and bidding queues.
+            // Send off hands and bidding cues.
             clients.send_event(id, Some(history.clone()), api::CurrentState::HandDealt);
             clients.send_event(
                 id,
@@ -80,30 +80,13 @@ impl super::Stage for Bidding {
 fn deck() -> Vec<Card> {
     let mut deck = Vec::new();
 
-    // Non-face cards.
-    for face in 5..11 {
-        for suit in [Suit::Spades, Suit::Clubs, Suit::Diamonds, Suit::Hearts] {
-            deck.push(Card::SuitedCard(SuitedCard {
-                suit,
-                face: Face::Number(face),
-            }));
-        }
-    }
-    deck.push(Card::SuitedCard(SuitedCard {
-        suit: Suit::Diamonds,
-        face: Face::Number(4),
-    }));
-    deck.push(Card::SuitedCard(SuitedCard {
-        suit: Suit::Hearts,
-        face: Face::Number(4),
-    }));
-
-    // Face cards and joker.
-    for face in [Face::Jack, Face::Queen, Face::King, Face::Ace] {
+    for face in 5..14 {
         for suit in [Suit::Spades, Suit::Clubs, Suit::Diamonds, Suit::Hearts] {
             deck.push(Card::SuitedCard(SuitedCard { suit, face }));
         }
     }
+    deck.push(Card::SuitedCard(SuitedCard { suit: Suit::Diamonds, face: 4 }));
+    deck.push(Card::SuitedCard(SuitedCard { suit: Suit::Hearts, face: 4 }));
     deck.push(Card::Joker);
 
     deck

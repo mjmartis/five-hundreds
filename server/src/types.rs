@@ -18,24 +18,16 @@ pub enum BidSuit {
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub enum Bid {
-    Tricks(isize, BidSuit),
+    Tricks(usize, BidSuit),  // Invariant: first element in [6..10].
     Mis,
     OpenMis,
     Pass,
 }
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
-pub enum Face {
-    Number(isize), // Invariant: in [4..10].
-    Jack,
-    Queen,
-    King,
-    Ace,
-}
-
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct SuitedCard {
-    pub face: Face,
+    // The number or face on the card. Invariant: in [4..13], with ace represented by 13.
+    pub face: usize,
     pub suit: Suit,
 }
 

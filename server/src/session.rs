@@ -36,7 +36,7 @@ impl Session {
             event_rx,
             clients: events::ClientMap::new(),
             players: Vec::new(),
-            stage: Some(Box::new(stages::Lobby {})),
+            stage: Some(Box::new(stages::Lobby::new(0))),
         }
     }
 

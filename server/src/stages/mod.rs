@@ -1,7 +1,9 @@
 mod aborted;
+mod bidding;
 mod lobby;
 
 pub use self::aborted::Aborted;
+pub use self::bidding::Bidding;
 pub use self::lobby::Lobby;
 
 use crate::api;

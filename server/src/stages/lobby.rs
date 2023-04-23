@@ -1,13 +1,23 @@
 // The stage of the session where players are waiting to join a new game.
 
 use super::aborted;
+use super::bidding;
+use super::lobby;
 
 use crate::api;
 use crate::events;
 
 use log::{error, info};
 
-pub struct Lobby {}
+pub struct Lobby {
+    game_index: usize,
+}
+
+impl Lobby {
+    pub fn new(game_index: usize) -> Self {
+        Lobby { game_index }
+    }
+}
 
 impl super::Stage for Lobby {
     fn process_step(
@@ -70,15 +80,7 @@ impl super::Stage for Lobby {
                 // All players newly joined.
                 if players.len() == 4 {
                     info!("Starting match.");
-
-                    // Tell clients that hands have been dealt.
-                    // TODO: stop lying to them.
-                    for (id, history) in players {
-                        clients.send_event(id, Some(history.clone()), api::CurrentState::HandDealt);
-                    }
-
-                    // TODO return bidding state.
-                    return Box::new(aborted::Aborted {});
+                    return Box::new(bidding::Bidding::new(players, clients, self.game_index % 4));
                 }
 
                 self

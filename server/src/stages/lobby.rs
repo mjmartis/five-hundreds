@@ -86,33 +86,6 @@ impl super::Stage for Lobby {
                 self
             }
 
-            // A client has left. This might end the game if they are an active player.
-            api::Step::Quit => {
-                // Active player has left.
-                if player_index.is_some() {
-                    // Let everyone know the game can't continue.
-                    for (id, history) in players {
-                        clients.send_event(
-                            id,
-                            Some(history.clone()),
-                            api::CurrentState::MatchAborted("Player left".to_string()),
-                        );
-                    }
-
-                    info!("Player [client {}] left.", client_id);
-                    return Box::new(aborted::Aborted {});
-                } else {
-                    info!("[client {}] tried to leave without joining.", client_id);
-                    clients.send_event(
-                        client_id,
-                        None,
-                        api::CurrentState::Error("Tried to leave without joining.".to_string()),
-                    );
-                }
-
-                self
-            }
-
             // A client has made a step that isn't valid in the lobby.
             bad_step => {
                 error!(

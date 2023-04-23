@@ -64,25 +64,22 @@ impl Session {
                     payload: Disconnect,
                 } => {
                     self.clients.remove_client(id);
+                    self.handle_player_exit(id);
+                }
 
-                    if self.player_index(id).is_some() {
-                        info!("Player [client {}] disconnected.", id);
-
-                        // Let everyone else know the game can't continue.
-                        for (player_id, history) in &self.players {
-                            if *player_id == *id {
-                                continue;
-                            }
-
-                            self.clients.send_event(
-                                player_id,
-                                Some(history.clone()),
-                                api::CurrentState::MatchAborted("Player disconnected".to_string()),
-                            );
-                        }
-
-                        self.stage = Some(Box::new(stages::Aborted {}));
-                        continue;
+                // A client has left. This might end the game if they are an active player. We
+                // handle this here because a player can quit from any stage.
+                events::ClientEvent {
+                    id,
+                    payload: Step(api::Step::Quit),
+                } => {
+                    if !self.handle_player_exit(id) {
+                        info!("[client {}] tried to leave without joining.", id);
+                        self.clients.send_event(
+                            id,
+                            None,
+                            api::CurrentState::Error("Tried to leave without joining.".to_string()),
+                        );
                     }
                 }
 
@@ -112,5 +109,29 @@ impl Session {
     // Returns the index in the player list of the given client ID, if it is present.
     fn player_index(&self, id: &events::ClientId) -> Option<usize> {
         self.players.iter().position(|(i, _)| i == id)
+    }
+
+    // If the given client is a player, transitions into an error state notifies other players that
+    // the game is over. Returns true if the departing client was a player.
+    fn handle_player_exit(&mut self, id: &events::ClientId) -> bool {
+        if self.player_index(id).is_none() {
+            return false;
+        }
+
+        info!("Player [client {}] left.", id);
+
+        // Let everyone else know the game can't continue.
+        for (player_id, history) in &self.players {
+            // TODO: this could send a message to a player that just left.
+
+            self.clients.send_event(
+                player_id,
+                Some(history.clone()),
+                api::CurrentState::MatchAborted("Player exited.".to_string()),
+            );
+        }
+
+        self.stage = Some(Box::new(stages::Aborted {}));
+        return true;
     }
 }

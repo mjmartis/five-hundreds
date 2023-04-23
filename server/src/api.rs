@@ -184,11 +184,11 @@ pub struct GameHistory {
 }
 
 // Background information about the session. Sub-structs are populated as they become valid.
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct History {
     pub lobby_history: LobbyHistory,
 
-    pub match_history: Option<MatchHistory>,
+    pub match_history: MatchHistory,
 
     pub game_history: Option<GameHistory>,
 }

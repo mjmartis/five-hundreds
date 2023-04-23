@@ -64,9 +64,23 @@ impl Session {
                     payload: Disconnect,
                 } => {
                     self.clients.remove_client(id);
+
                     if self.player_index(id).is_some() {
-                        // TODO: send all clients goodbye messages.
                         info!("Player [client {}] disconnected.", id);
+
+                        // Let everyone else know the game can't continue.
+                        for (player_id, history) in &self.players {
+                            if *player_id == *id {
+                                continue;
+                            }
+
+                            self.clients.send_event(
+                                player_id,
+                                Some(history.clone()),
+                                api::CurrentState::MatchAborted("Player disconnected".to_string()),
+                            );
+                        }
+
                         self.stage = Some(Box::new(stages::Aborted {}));
                         continue;
                     }
@@ -95,15 +109,8 @@ impl Session {
         }
     }
 
+    // Returns the index in the player list of the given client ID, if it is present.
     fn player_index(&self, id: &events::ClientId) -> Option<usize> {
         self.players.iter().position(|(i, _)| i == id)
-    }
-
-    fn player_history(&self, id: &events::ClientId) -> Option<api::History> {
-        if let Some(i) = self.player_index(id) {
-            return Some(self.players[i].1.clone());
-        }
-
-        None
     }
 }

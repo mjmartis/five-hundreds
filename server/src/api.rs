@@ -11,7 +11,7 @@ pub enum Step {
     Poll,
 
     // Ask to join.
-    Join(isize), // The index of the team to join (i.e. in [0, 1]).
+    Join(usize), // The index of the team to join (i.e. in [0, 1]).
 
     // Make a bid.
     MakeBid(types::Bid),
@@ -53,7 +53,7 @@ pub enum CurrentState {
 
     // Another player has bid.
     // Their bid stored in history struct.
-    TheyBid(isize), // The player who made their bid.
+    TheyBid(usize), // The player who made their bid.
 
     // A player (possibly you) has won the bid.
     // Winning player stored in history struct.
@@ -83,16 +83,16 @@ pub enum CurrentState {
     WaitingForTheirPlay,
 
     // You or another player has won the trick.
-    TrickWon(isize), // Index of winning player.
+    TrickWon(usize), // Index of winning player.
 
     // Your or the other team have won the game.
-    GameWon(isize), // Index of winning team (i.e. in [0, 1]).
+    GameWon(usize), // Index of winning team (i.e. in [0, 1]).
 
     // The new scores have been included in the history struct.
     ScoresUpdated,
 
     // A team has won the entire match.
-    MatchWon(isize), // Index of winning team (i.e. in [0, 1]).
+    MatchWon(usize), // Index of winning team (i.e. in [0, 1]).
 
     // The match has unexpectedly ended (e.g. a player has left).
     MatchAborted(String), // Reason.
@@ -107,13 +107,13 @@ pub enum CurrentState {
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct LobbyHistory {
     // Number of players currently joined.
-    pub player_count: isize,
+    pub player_count: usize,
 
     // Your index in the player list.
-    pub your_player_index: isize,
+    pub your_player_index: usize,
 
     // Your index in the team list (i.e. in [0, 1]).
-    pub your_team_index: isize,
+    pub your_team_index: usize,
 }
 
 // Background information about the match.
@@ -131,13 +131,13 @@ pub struct BiddingHistory {
     // The last bids made by each player. Ordered from player 1 to player 4.
     pub bids: Vec<Option<types::Bid>>, // Invariant: length of 4.
 
-    pub current_bidder_index: isize,
+    pub current_bidder_index: usize,
 }
 
 // Background information about the bid that won.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WinningBidHistory {
-    pub winning_bidder_index: isize,
+    pub winning_bidder_index: usize,
 
     pub winning_bid: types::Bid, // Invariant: not a Pass.
 }
@@ -149,13 +149,13 @@ pub struct PlaysHistory {
     pub joker_suit: Option<types::Suit>,
 
     // The number of tricks you have won.
-    pub your_tricks_count: isize,
+    pub your_tricks_count: usize,
 
     // The number of tricks they have won.
-    pub their_tricks_count: isize,
+    pub their_tricks_count: usize,
 
     // The number of cards in each player's hand.
-    pub hand_sizes: Vec<isize>, // Invariant: length of 4.
+    pub hand_sizes: Vec<usize>, // Invariant: length of 4.
 
     // The previous trick, if there was one. Listed in order from player 1 to
     // player 4. Inner Option is to support e.g. mis bids, where one player
@@ -166,7 +166,7 @@ pub struct PlaysHistory {
     pub current_trick: Vec<Option<types::Play>>,
 
     // Index in the player list of the currently-playing player.
-    pub currently_playing_player_index: isize,
+    pub currently_playing_player_index: usize,
 }
 
 // Background information about the current game (i.e. the current bidding,

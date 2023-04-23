@@ -5,7 +5,7 @@ use super::aborted;
 use crate::api;
 use crate::events;
 
-use log::info;
+use log::{error, info};
 
 pub struct Lobby {}
 
@@ -46,10 +46,26 @@ impl super::Stage for Lobby {
                     return self;
                 }
 
-                players.push((*client_id, Default::default()));
+                // Note: starts with incorrect player count to match the other histories that are
+                // now out-of-date.
+                players.push((
+                    *client_id,
+                    api::History {
+                        lobby_history: api::LobbyHistory {
+                            player_count: players.len(),
+                            your_player_index: players.len(),
+                            your_team_index: players.len() % 2,
+                        },
+                        ..Default::default()
+                    },
+                ));
                 info!("[client {}] joined.", client_id);
 
-                // TODO send player joined messages to everyone.
+                // Let players know another has joined.
+                for (id, history) in &mut *players {
+                    history.lobby_history.player_count += 1;
+                    clients.send_event(id, Some(history.clone()), api::CurrentState::PlayerJoined);
+                }
 
                 // All players newly joined.
                 if players.len() == 4 {
@@ -69,11 +85,18 @@ impl super::Stage for Lobby {
             }
 
             // A client has left. This might end the game if they are an active player.
-            // player.
             api::Step::Quit => {
                 // Active player has left.
                 if player_index.is_some() {
-                    // TODO: send all clients goodbye messages.
+                    // Let everyone know the game can't continue.
+                    for (id, history) in players {
+                        clients.send_event(
+                            id,
+                            Some(history.clone()),
+                            api::CurrentState::MatchAborted("Player left".to_string()),
+                        );
+                    }
+
                     info!("Player [client {}] left.", client_id);
                     return Box::new(aborted::Aborted {});
                 } else {
@@ -88,8 +111,18 @@ impl super::Stage for Lobby {
                 self
             }
 
-            _ => {
-                // TODO emit "unexpected step" error.
+            // A client has made a step that isn't valid in the lobby.
+            bad_step => {
+                error!(
+                    "[client {}] tried an invalid step in the lobby stage: {:?}",
+                    client_id, bad_step
+                );
+                clients.send_event(
+                    client_id,
+                    player_index.map(|i| players[i].1.clone()),
+                    api::CurrentState::Error("Invalid step in the lobby stage.".to_string()),
+                );
+
                 self
             }
         }

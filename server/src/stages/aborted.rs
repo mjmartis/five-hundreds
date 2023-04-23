@@ -3,12 +3,10 @@
 
 use crate::api;
 use crate::events;
-use crate::stages;
-use crate::types;
 
 pub struct Aborted {}
 
-impl stages::Stage for Aborted {
+impl super::Stage for Aborted {
     // Always send the error state back.
     fn process_step(
         self: Box<Self>,
@@ -17,7 +15,7 @@ impl stages::Stage for Aborted {
         clients: &events::ClientMap,
         client_id: &events::ClientId,
         _step: &api::Step,
-    ) -> Box<dyn stages::Stage> {
+    ) -> Box<dyn super::Stage> {
         clients.send_event(
             client_id,
             // Include player history if this client is a valid player.

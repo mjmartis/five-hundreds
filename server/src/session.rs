@@ -1,17 +1,14 @@
 // The top-level instance of a 500s session. Coordinates the lobby, bidding and gameplay for one
 // match.
 
-use crate::aborted;
 use crate::api;
 use crate::events;
 use crate::events::ClientEventPayload::Connect;
 use crate::events::ClientEventPayload::Disconnect;
 use crate::events::ClientEventPayload::Step;
-use crate::lobby;
 use crate::stages;
-use crate::types;
 
-use log::{error, info};
+use log::info;
 
 pub struct Session {
     event_rx: events::ClientEventReceiver,
@@ -37,7 +34,7 @@ impl Session {
             event_rx,
             clients: events::ClientMap::new(),
             players: Vec::new(),
-            stage: Some(Box::new(lobby::Lobby {})),
+            stage: Some(Box::new(stages::Lobby {})),
         }
     }
 
@@ -68,7 +65,7 @@ impl Session {
                     if let Some(_) = self.player_index(id) {
                         // TODO: send all clients goodbye messages.
                         info!("Player [client {}] disconnected.", id);
-                        self.stage = Some(Box::new(aborted::Aborted {}));
+                        self.stage = Some(Box::new(stages::Aborted {}));
                         continue;
                     }
                 }

@@ -1,15 +1,12 @@
 // When given a valid command, always responds with a dummy state.
 // Try: wscat -c 127.0.0.1:8080 -x '"Poll"'
 
-use env_logger;
 use std::env;
 
-mod aborted;
+mod stages;
 mod api;
 mod events;
-mod lobby;
 mod session;
-mod stages;
 mod types;
 mod web_bridge;
 

@@ -3,7 +3,6 @@
 
 use std::debug_assert;
 
-use crate::api;
 use crate::events;
 
 use futures_util::SinkExt;

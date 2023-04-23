@@ -1,9 +1,14 @@
-// The trait that each major "stage" (e.g. bidding, playing tricks) of a session should implement
-// in order to be coordinated by the game engine.
+mod lobby;
+mod aborted;
+
+pub use self::lobby::Lobby;
+pub use self::aborted::Aborted;
 
 use crate::api;
 use crate::events;
 
+// The trait that each major "stage" (e.g. bidding, playing tricks) of a session should implement
+// in order to be coordinated by the game engine.
 pub trait Stage {
     // Accepts a step request from a client, and returns the next stage of the session. A stage
     // instance can return itself if the session stage hasn't changed.

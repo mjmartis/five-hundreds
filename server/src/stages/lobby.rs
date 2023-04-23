@@ -1,16 +1,15 @@
 // The stage of the session where players are waiting to join a new game.
 
-use crate::aborted;
+use super::aborted;
+
 use crate::api;
 use crate::events;
-use crate::stages;
-use crate::types;
 
-use log::{error, info};
+use log::info;
 
 pub struct Lobby {}
 
-impl stages::Stage for Lobby {
+impl super::Stage for Lobby {
     fn process_step(
         self: Box<Self>,
         players: &mut Vec<(events::ClientId, api::History)>,
@@ -18,7 +17,7 @@ impl stages::Stage for Lobby {
         clients: &events::ClientMap,
         client_id: &events::ClientId,
         step: &api::Step,
-    ) -> Box<dyn stages::Stage> {
+    ) -> Box<dyn super::Stage> {
         match &step {
             // A client is attempting to join.
             api::Step::Join(_) => {

@@ -1,8 +1,6 @@
 // The stage of the session where players are waiting to join a new game.
 
-use super::aborted;
 use super::bidding;
-use super::lobby;
 
 use crate::api;
 use crate::events;

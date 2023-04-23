@@ -4,7 +4,6 @@ use crate::api;
 use crate::events;
 use crate::types::*;
 
-use rand;
 use rand::seq::SliceRandom;
 use std::debug_assert;
 
@@ -28,7 +27,7 @@ impl Bidding {
 
         // Deal hands.
         let chunks: Vec<&[Card]> = deck.chunks(10).collect();
-        let hands: Vec<Vec<Card>> = chunks[0..4].into_iter().map(|h| h.to_vec()).collect();
+        let hands: Vec<Vec<Card>> = chunks[0..4].iter().map(|h| h.to_vec()).collect();
         let kitty = chunks[4].to_vec();
 
         for (i, (id, history)) in players.iter_mut().enumerate() {
@@ -73,7 +72,7 @@ impl super::Stage for Bidding {
         client_id: &events::ClientId,
         step: &api::Step,
     ) -> Box<dyn super::Stage> {
-        return self;
+        self
     }
 }
 

@@ -4,9 +4,12 @@
 use env_logger;
 use std::env;
 
+mod aborted;
 mod api;
 mod events;
+mod lobby;
 mod session;
+mod stages;
 mod types;
 mod web_bridge;
 

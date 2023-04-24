@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+	<style>
+		.hand {
+			background: lightgrey;
+		}
+
+		.surface {
+			background: lightgreen;
+		}
+
+		.card {
+			font-size: 80px;
+		}
+
+		table {
+			width: 800px;
+			height: 800px;
+		}
+
+		td {
+			text-align: center;
+		}
+	</style>
+	<head>
+		<meta charset="utf-8">
+		<title>500s</title>
+	</head>
+	<body>
+		<h1>Five hundreds</h1>
+		<table style="width: 800px; height: 800px">
+			<tr>
+				<td></td>
+				<td class="hand" id="p3_hand" colspan="3">P3</td>
+				<td></td>
+			</tr>
+			<tr>
+				<td class="hand" id="p2_hand" rowspan="3">P2</td>
+				<td class="surface"></td>
+				<td class="surface card" id="p3_card">🂱</td>
+				<td class="surface"></td>
+				<td class="hand" id="p4_hand" rowspan="3">P4</td>
+			</tr>
+			<tr>
+				<td class="surface card" id="p2_card">🂱</td>
+				<td class="surface"></td>
+				<td class="surface card" id="p4_card">🂱</td>
+			</tr>
+			<tr>
+				<td class="surface"></td>
+				<td class="surface card">🂱</td>
+				<td class="surface"></td>
+			</tr>
+			<tr>
+				<td></td>
+				<td class="hand" id="p1_hand" colspan="3">P1</td>
+				<td></td>
+			</tr>
+		</table>
+	</body>
+</html>

@@ -26,7 +26,7 @@ pub enum Bid {
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct SuitedCard {
-    // The number or face on the card. Invariant: in [4..13], with ace represented by 13.
+    // The number or face on the card. Invariant: in [4..13], with ace represented by 14.
     pub face: usize,
     pub suit: Suit,
 }

@@ -28,6 +28,7 @@ impl Bidding {
         // Deal hands.
         let chunks: Vec<&[Card]> = deck.chunks(10).collect();
         let hands: Vec<Vec<Card>> = chunks[0..4].iter().map(|h| h.to_vec()).collect();
+
         let kitty = chunks[4].to_vec();
 
         for (i, (id, history)) in players.iter_mut().enumerate() {
@@ -80,7 +81,7 @@ impl super::Stage for Bidding {
 fn deck() -> Vec<Card> {
     let mut deck = Vec::new();
 
-    for face in 5..14 {
+    for face in 5..15 {
         for suit in [Suit::Spades, Suit::Clubs, Suit::Diamonds, Suit::Hearts] {
             deck.push(Card::SuitedCard(SuitedCard { suit, face }));
         }

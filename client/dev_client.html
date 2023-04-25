@@ -33,6 +33,12 @@
 			width: 30%;
 		}
 
+		/* Step UI starts greyed out. */
+		#steps {
+			pointer-events: none;
+			opacity: 0.4;
+		}
+
 		/* Collapsible step UI. */
 		.collapse_content {
 			display: none;
@@ -46,6 +52,15 @@
 			min-height: calc(100vh - 50px);
 		}
 	</style>
+	<!--
+	<script type="importmap">
+	{
+	  	"imports": {
+	    	    "json-view": "./build/three.module.js",
+	    	}
+	}
+	</script>
+	-->
 	<head>
 		<meta charset="utf-8">
 		<title>Five hundreds</title>
@@ -87,7 +102,7 @@
 		</div>
 
 		<!-- Show client step options to the right of the match. -->
-		<div class="column steps">
+		<div class="column steps" id="steps">
 			<!-- Join UI. -->
 			<button type="button" class="collapse_button">Join</button>
 			<div class="collapse_content">
@@ -106,7 +121,7 @@
 			<div class="collapse_content">Bid content</div>
 			</br>
 
-			<div id="states">Test</div>
+			<div id="states"></div>
 
 			<!--
 			<select style="font-size: 120px">
@@ -115,6 +130,10 @@
 			</select>
 			-->
 		</div>
-	<script src="dev_client.js"></script>
+
+		<!-- renderjson: https://github.com/caldwell/renderjson -->
+		<script type="text/javascript" src="renderjson.js"></script>
+
+		<script type="text/javascript" src="dev_client.js"></script>
 	</body>
 </html>

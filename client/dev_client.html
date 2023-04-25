@@ -52,50 +52,43 @@
 			min-height: calc(100vh - 50px);
 		}
 	</style>
-	<!--
-	<script type="importmap">
-	{
-	  	"imports": {
-	    	    "json-view": "./build/three.module.js",
-	    	}
-	}
-	</script>
-	-->
 	<head>
 		<meta charset="utf-8">
 		<title>Five hundreds</title>
 	</head>
 	<body>
 		<h1>Five hundreds</h1>
+		<h2 id="heading">Heading</h2>
+		<h3 id="info">Info line</h3>
 
 		<!-- Use a table to format a servicable representation of a 500s match -->
 		<div class="column match">
 		<table style="width: 100%">
 			<tr>
 				<td></td>
-				<td class="hand" id="p3_hand" colspan="3">P3</td>
+				<td class="hand" id="pt_hand" colspan="3">PT</td>
 				<td></td>
 			</tr>
 			<tr>
-				<td class="hand" id="p2_hand" rowspan="3">P2</td>
+				<td class="hand" id="pl_hand" rowspan="3">PL</td>
 				<td class="surface"></td>
-				<td class="surface card" id="p3_card">3</td>
+				<td class="surface card" id="pt_card">T</td>
 				<td class="surface"></td>
-				<td class="hand" id="p4_hand" rowspan="3">P4</td>
+				<td class="hand" id="pr_hand" rowspan="3">PR</td>
 			</tr>
 			<tr>
-				<td class="surface card" id="p2_card">2</td>
+				<td class="surface card" id="pl_card">L</td>
 				<td class="surface"></td>
-				<td class="surface card" id="p4_card">4</td>
+				<td class="surface card" id="pr_card">R</td>
 			</tr>
 			<tr>
 				<td class="surface"></td>
-				<td class="surface card">1</td>
+				<td class="surface card">B</td>
 				<td class="surface"></td>
 			</tr>
 			<tr>
 				<td></td>
-				<td class="hand" id="p1_hand" colspan="3">P1</td>
+				<td class="hand" id="pb_hand" colspan="3">PB</td>
 				<td></td>
 			</tr>
 		</table>
@@ -116,19 +109,11 @@
 			</div>
 			<hr>
 
-
 			<button type="button" class="collapse_button">Make bid</button>
 			<div class="collapse_content">Bid content</div>
 			<hr>
 
 			<div id="states"></div>
-
-			<!--
-			<select style="font-size: 120px">
-				<option value="ks">🂮</option>
-				<option style="color: red" value="ah">🂱</option>
-			</select>
-			-->
 		</div>
 
 		<!-- renderjson: https://github.com/caldwell/renderjson -->

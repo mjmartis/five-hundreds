@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 	<style>
+		html, body {
+			height: 100%;
+		}
+
 		.hand {
 			background: lightgrey;
 		}
 
 		.surface {
 			background: lightgreen;
-		}
-
-		.card {
-			font-size: 80px;
 		}
 
 		table {
@@ -21,14 +21,41 @@
 		td {
 			text-align: center;
 		}
+
+		/* Two column UI. */
+		.column {
+			float: left;
+		}
+		.match {
+			width: 70%;
+		}
+		.steps {
+			width: 30%;
+		}
+
+		/* Collapsible step UI. */
+		.collapse_content {
+			display: none;
+			overflow: hidden;
+		}
+
+		/* State UI. */
+		#states {
+			overflow: auto;
+			border: 1px solid;
+			min-height: calc(100vh - 50px);
+		}
 	</style>
 	<head>
 		<meta charset="utf-8">
-		<title>500s</title>
+		<title>Five hundreds</title>
 	</head>
 	<body>
 		<h1>Five hundreds</h1>
-		<table style="width: 800px; height: 800px">
+
+		<!-- Use a table to format a servicable representation of a 500s match -->
+		<div class="column match">
+		<table style="width: 100%">
 			<tr>
 				<td></td>
 				<td class="hand" id="p3_hand" colspan="3">P3</td>
@@ -37,18 +64,18 @@
 			<tr>
 				<td class="hand" id="p2_hand" rowspan="3">P2</td>
 				<td class="surface"></td>
-				<td class="surface card" id="p3_card">🂱</td>
+				<td class="surface card" id="p3_card">3</td>
 				<td class="surface"></td>
 				<td class="hand" id="p4_hand" rowspan="3">P4</td>
 			</tr>
 			<tr>
-				<td class="surface card" id="p2_card">🂱</td>
+				<td class="surface card" id="p2_card">2</td>
 				<td class="surface"></td>
-				<td class="surface card" id="p4_card">🂱</td>
+				<td class="surface card" id="p4_card">4</td>
 			</tr>
 			<tr>
 				<td class="surface"></td>
-				<td class="surface card">🂱</td>
+				<td class="surface card">1</td>
 				<td class="surface"></td>
 			</tr>
 			<tr>
@@ -57,5 +84,37 @@
 				<td></td>
 			</tr>
 		</table>
+		</div>
+
+		<!-- Show client step options to the right of the match. -->
+		<div class="column steps">
+			<!-- Join UI. -->
+			<button type="button" class="collapse_button">Join</button>
+			<div class="collapse_content">
+				Team: 
+				<select>
+					<option value="0">0</option>
+					<option value="1">1</option>
+				</select>
+				</br>
+				<button type="button" id="join_button">Submit</button>
+			</div>
+			</br>
+
+
+			<button type="button" class="collapse_button">Make bid</button>
+			<div class="collapse_content">Bid content</div>
+			</br>
+
+			<div id="states">Test</div>
+
+			<!--
+			<select style="font-size: 120px">
+				<option value="ks">🂮</option>
+				<option style="color: red" value="ah">🂱</option>
+			</select>
+			-->
+		</div>
+	<script src="dev_client.js"></script>
 	</body>
 </html>

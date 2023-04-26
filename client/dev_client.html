@@ -5,14 +5,6 @@
             height: 100%;
         }
 
-        #stage {
-            visibility: hidden;
-        }
-
-        #info {
-            visibility: hidden;
-        }
-
         /* Playing table UI. */
 
         .card {
@@ -35,6 +27,7 @@
             border-radius: 10px; 
             border: solid; 
             margin-top: 15px;
+            margin-left: 15px;
             background: white;
             text-align: center;
             vertical-align: middle;
@@ -77,6 +70,17 @@
             opacity: 0.4;
         }
 
+        /* Step titles don't look like buttons. */
+        .collapse_button {
+            font-weight: bold;
+            background: none;
+            color: inherit;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            outline: inherit;
+        }
+
         /* Collapsible step UI. */
         .collapse_content {
             display: none;
@@ -96,8 +100,8 @@
     </head>
     <body>
         <h1>Five hundreds</h1>
-        <h2 id="stage">Heading</h2>
-        <h3 id="info">Info line</h3>
+        <h2 id="stage">Lobby</h2>
+        <h3 id="info">Waiting for you to join</h3>
 
         <!-- Use a table to format a servicable representation of a 500s match -->
         <div class="column match">

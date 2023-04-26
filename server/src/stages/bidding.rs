@@ -21,8 +21,16 @@ impl Bidding {
     ) -> Self {
         debug_assert!(players.len() == 4);
 
-        // Shuffle deck.
-        let mut deck = deck();
+        // Populate and shuffle deck.
+        let mut deck = (5..15).flat_map(|face|
+            vec![Card::SuitedCard(SuitedCard { face, suit: Suit::Spades }),
+                 Card::SuitedCard(SuitedCard { face, suit: Suit::Clubs }),
+                 Card::SuitedCard(SuitedCard { face, suit: Suit::Diamonds }),
+                 Card::SuitedCard(SuitedCard { face, suit: Suit::Hearts } )]
+        ).chain(vec![Card::SuitedCard(SuitedCard {face: 4, suit: Suit::Diamonds }),
+                     Card::SuitedCard(SuitedCard {face: 4, suit: Suit::Hearts }),
+                     Card::Joker]
+        ).collect::<Vec<_>>();
         deck.shuffle(&mut rand::thread_rng());
 
         // Deal hands.
@@ -75,20 +83,4 @@ impl super::Stage for Bidding {
     ) -> Box<dyn super::Stage> {
         self
     }
-}
-
-// Populate a vector with the cards from a standard 500s game.
-fn deck() -> Vec<Card> {
-    let mut deck = Vec::new();
-
-    for face in 5..15 {
-        for suit in [Suit::Spades, Suit::Clubs, Suit::Diamonds, Suit::Hearts] {
-            deck.push(Card::SuitedCard(SuitedCard { suit, face }));
-        }
-    }
-    deck.push(Card::SuitedCard(SuitedCard { suit: Suit::Diamonds, face: 4 }));
-    deck.push(Card::SuitedCard(SuitedCard { suit: Suit::Hearts, face: 4 }));
-    deck.push(Card::Joker);
-
-    deck
 }

@@ -1,124 +1,169 @@
 <!DOCTYPE html>
 <html lang="en">
-	<style>
-		html, body {
-			height: 100%;
-		}
+    <style>
+        html, body {
+            height: 100%;
+        }
 
-		.hand {
-			background: lightgrey;
-		}
+        #stage {
+            visibility: hidden;
+        }
 
-		.surface {
-			background: lightgreen;
-		}
+        #info {
+            visibility: hidden;
+        }
 
-		table {
-			width: 800px;
-			height: 800px;
-		}
+        /* Playing table UI. */
 
-		td {
-			text-align: center;
-		}
+        .card {
+            width: 50px;
+            height: 80px;
+            border-radius: 10px; 
+            border: solid; 
+            margin-left: 15px;
+            background: white;
+            text-align: center;
+            vertical-align: middle;
+            line-height: 80px;
+            font-family: sans-serif;
+            font-size: 2em;
+        }
 
-		/* Two column UI. */
-		.column {
-			float: left;
-		}
-		.match {
-			width: 70%;
-		}
-		.steps {
-			width: 30%;
-		}
+        .v_card {
+            width: 80px;
+            height: 50px;
+            border-radius: 10px; 
+            border: solid; 
+            margin-top: 15px;
+            background: white;
+            text-align: center;
+            vertical-align: middle;
+            line-height: 50px;
+            font-family: sans-serif;
+            font-size: 2em;
+        }
 
-		/* Step UI starts greyed out. */
-		#steps {
-			pointer-events: none;
-			opacity: 0.4;
-		}
+        .h_hand {
+            background: lightgrey;
+            width: 465px;
+            height: 110px;
+        }
 
-		/* Collapsible step UI. */
-		.collapse_content {
-			display: none;
-			overflow: hidden;
-		}
+        .v_hand {
+            background: lightgrey;
+            width: 110px;
+            height: 465px;
+            margin: auto;
+        }
 
-		/* State UI. */
-		#states {
-			overflow: auto;
-			border: 1px solid;
-			min-height: calc(100vh - 50px);
-		}
-	</style>
-	<head>
-		<meta charset="utf-8">
-		<title>Five hundreds</title>
-	</head>
-	<body>
-		<h1>Five hundreds</h1>
-		<h2 id="heading">Heading</h2>
-		<h3 id="info">Info line</h3>
+        .surface {
+            background: lightgreen;
+        }
 
-		<!-- Use a table to format a servicable representation of a 500s match -->
-		<div class="column match">
-		<table style="width: 100%">
-			<tr>
-				<td></td>
-				<td class="hand" id="pt_hand" colspan="3">PT</td>
-				<td></td>
-			</tr>
-			<tr>
-				<td class="hand" id="pl_hand" rowspan="3">PL</td>
-				<td class="surface"></td>
-				<td class="surface card" id="pt_card">T</td>
-				<td class="surface"></td>
-				<td class="hand" id="pr_hand" rowspan="3">PR</td>
-			</tr>
-			<tr>
-				<td class="surface card" id="pl_card">L</td>
-				<td class="surface"></td>
-				<td class="surface card" id="pr_card">R</td>
-			</tr>
-			<tr>
-				<td class="surface"></td>
-				<td class="surface card">B</td>
-				<td class="surface"></td>
-			</tr>
-			<tr>
-				<td></td>
-				<td class="hand" id="pb_hand" colspan="3">PB</td>
-				<td></td>
-			</tr>
-		</table>
-		</div>
+        /* Two column UI. */
+        .column {
+            float: left;
+        }
+        .match {
+            width: 70%;
+        }
+        .steps {
+            width: 30%;
+        }
 
-		<!-- Show client step options to the right of the match. -->
-		<div class="column steps" id="steps">
-			<!-- Join UI. -->
-			<button type="button" class="collapse_button">Join</button>
-			<div class="collapse_content">
-				Team: 
-				<select id="join_team">
-					<option value="0">0</option>
-					<option value="1">1</option>
-				</select>
-				<br>
-				<button type="button" id="join_button">Submit</button>
-			</div>
-			<hr>
+        /* Step UI starts greyed out. */
+        #steps {
+            pointer-events: none;
+            opacity: 0.4;
+        }
 
-			<button type="button" class="collapse_button">Make bid</button>
-			<div class="collapse_content">Bid content</div>
-			<hr>
+        /* Collapsible step UI. */
+        .collapse_content {
+            display: none;
+            overflow: hidden;
+        }
 
-			<div id="states"></div>
-		</div>
+        /* State UI. */
+        #states {
+            overflow: auto;
+            border: 1px solid;
+            min-height: calc(100vh - 50px);
+        }
+    </style>
+    <head>
+        <meta charset="utf-8">
+        <title>Five hundreds</title>
+    </head>
+    <body>
+        <h1>Five hundreds</h1>
+        <h2 id="stage">Heading</h2>
+        <h3 id="info">Info line</h3>
 
-		<!-- renderjson: https://github.com/caldwell/renderjson -->
-		<script type="text/javascript" src="renderjson.js"></script>
+        <!-- Use a table to format a servicable representation of a 500s match -->
+        <div class="column match">
+        <table id="table">
+            <tr>
+                <td></td>
+                <td class="h_hand" id="pt_hand" colspan="3">
+                    <div class="card"></div>
+                </td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="v_hand" id="pl_hand" rowspan="3">
+                    <div class="v_card"></div></td>
+                </td>
+                <td class="surface"></td>
+                <td class="surface" id="pt_card"></td>
+                <td class="surface"></td>
+                <td class="v_hand" id="pr_hand" rowspan="3">
+                    <div class="v_card"></div>
+                </td>
+            </tr>
+            <tr>
+                <td class="surface" id="pl_card"></td>
+                <td class="surface"></td>
+                <td class="surface" id="pr_card"></td>
+            </tr>
+            <tr>
+                <td class="surface"></td>
+                <td class="surface"></td>
+                <td class="surface"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td class="h_hand" id="pb_hand" colspan="3">
+                    <div class="card">5♠</div></td>
+                <td></td>
+            </tr>
+        </table>
+        </div>
 
-		<script type="text/javascript" src="dev_client.js"></script>
-	</body>
+        <!-- Show client step options to the right of the match. -->
+        <div class="column steps" id="steps">
+            <!-- Join UI. -->
+            <button type="button" class="collapse_button">Join</button>
+            <div class="collapse_content">
+                Team: 
+                <select id="join_team">
+                    <option value="0">0</option>
+                    <option value="1">1</option>
+                </select>
+                <br>
+                <button type="button" id="join_button">Submit</button>
+            </div>
+            <hr>
+
+            <button type="button" class="collapse_button">Make bid</button>
+            <div class="collapse_content">Bid content</div>
+            <hr>
+
+            <div id="states"></div>
+        </div>
+
+        <!-- renderjson: https://github.com/caldwell/renderjson -->
+        <script type="text/javascript" src="renderjson.js"></script>
+
+        <script type="text/javascript" src="dev_client.js"></script>
+    </body>
 </html>

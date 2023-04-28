@@ -6,6 +6,14 @@
         }
 
         /* Playing table UI. */
+        .player_name {
+            color: lightgrey;
+            text-align: center;
+        }
+
+        .v_player_name {
+            writing-mode: vertical-rl;
+        }
 
         .card {
             width: 50px;
@@ -108,21 +116,27 @@
         <table id="table">
             <tr>
                 <td></td>
-                <td class="h_hand" id="pt_hand" colspan="3">
-                    <div class="card"></div>
-                </td>
+                <td></td>
+                <td class="player_name" colspan="3" id="pt_name">Waiting...</td>
+                <td></td>
                 <td></td>
             </tr>
             <tr>
-                <td class="v_hand" id="pl_hand" rowspan="3">
-                    <div class="v_card"></div></td>
+                <td></td>
+                <td></td>
+                <td class="h_hand" id="pt_hand" colspan="3"></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="player_name v_player_name" rowspan="3" id="pl_name">Waiting...</td>
+                <td class="v_hand" id="pl_hand" rowspan="3"></td>
                 </td>
                 <td class="surface"></td>
                 <td class="surface" id="pt_card"></td>
                 <td class="surface"></td>
-                <td class="v_hand" id="pr_hand" rowspan="3">
-                    <div class="v_card"></div>
-                </td>
+                <td class="v_hand" id="pr_hand" rowspan="3"></td>
+                <td class="player_name v_player_name" rowspan="3" id="pr_name">Waiting...</td>
             </tr>
             <tr>
                 <td class="surface" id="pl_card"></td>
@@ -131,13 +145,20 @@
             </tr>
             <tr>
                 <td class="surface"></td>
-                <td class="surface"></td>
+                <td class="surface" id="pb_card"></td>
                 <td class="surface"></td>
             </tr>
             <tr>
                 <td></td>
-                <td class="h_hand" id="pb_hand" colspan="3">
-                    <div class="card">5♠</div></td>
+                <td></td>
+                <td class="h_hand" id="pb_hand" colspan="3"></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td></td>
+                <td class="player_name" colspan="3" id="pb_name">Waiting...</td>
+                <td></td>
                 <td></td>
             </tr>
         </table>

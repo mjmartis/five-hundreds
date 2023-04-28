@@ -136,6 +136,25 @@ function update_cards(json) {
 
         pb_hand.appendChild(card);
     }
+
+    // Next, show the backs of everyone else's cards.
+    // TODO: account for number of cards played.
+    // TODO: fix.
+    for (const pref of PLAYER_PREFIXES) {
+        if (pref === "pb") {
+            continue;
+        }
+
+        const vert = pref == "pl" || pref == "pr";
+        const hand = document.getElementById(pref + "_hand");
+        for (let i = 0; i < 10; ++i) {
+            const card = document.createElement("div");
+            card.innerHTML = "&nbsp;&nbsp;&nbsp;";
+            card.classList.add(vert ? "v_card" : "card");
+            hand.appendChild(card);
+            hand.appendChild(document.createElement("br"));
+        }
+    }
 }
 
 // Main logic.

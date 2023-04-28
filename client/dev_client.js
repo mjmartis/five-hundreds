@@ -2,8 +2,8 @@
 
 // Takes in a card JSON struct and returns a nicer string representation.
 function pretty_card(card_json) {
-    const FACES = [null, null, null, null,  4,  5,  6,
-         7,  8,  9, 10, "J", "Q", "K", "A"
+    const FACES = [null, null, null, null, 4, 5, 6,
+        7, 8, 9, 10, "J", "Q", "K", "A"
     ];
     const SUITS = {
         "Spades": "♠",
@@ -33,7 +33,7 @@ function set_stage(json) {
         const player_index = json["history"]["lobby_history"]["your_player_index"];
 
         for (let i = 0; i < player_count; ++i) {
-            const index = (i - player_index + 4) % 4; 
+            const index = (i - player_index + 4) % 4;
             const e = document.getElementById(PLAYER_PREFIXES[index] + "_name");
             e.innerHTML = "Player " + (i + 1);
             e.style.setProperty("color", "black");

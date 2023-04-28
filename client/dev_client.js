@@ -21,41 +21,120 @@ function pretty_card(card_json) {
 }
 
 // Updates the stage text to match the session state sent by the server.
-function set_stage(json) {
+function update_stage(json) {
     const stage = document.getElementById("stage");
     stage.innerHTML = "";
 
-    if (json["state"] === "PlayerJoined") {
-        // Display new player name.
-        const PLAYER_PREFIXES = ["pb", "pl", "pt", "pr"];
+    // Some states are strings, some are objects.
+    const key = Object.keys(json["state"])[0];
+    const state = key == "0" ? json["state"] : key;
 
-        const player_count = json["history"]["lobby_history"]["player_count"];
-        const player_index = json["history"]["lobby_history"]["your_player_index"];
+    switch (state) {
+        case "PlayerJoined":
+            stage.innerHTML = "Lobby";
+            break;
 
-        for (let i = 0; i < player_count; ++i) {
-            const index = (i - player_index + 4) % 4;
-            const e = document.getElementById(PLAYER_PREFIXES[index] + "_name");
-            e.innerHTML = "Player " + (i + 1);
-            e.style.setProperty("color", "black");
+        case "MatchAborted":
+            // Display red aborted title.
+            stage.innerHTML = "<div style='color: red'>Aborted</div>";
+            break;
 
-            if (i == player_index) {
-                e.style.setProperty("font-weight", "bold");
-            }
-        }
-    } else if (Object.keys(json["state"])[0] == "MatchAborted") {
-        stage.innerHTML = "<div style='color: red'>Aborted</div>";
+        case "WaitingForTheirBid":
+        case "WaitingForYourBid":
+            stage.innerHTML = "Bidding";
+            break;
     }
 }
 
 // Updates the info text to match the session state sent by the server.
-function set_info(json) {
+function update_info(json) {
     const info = document.getElementById("info");
     info.innerHTML = "";
 
-    if (json["state"] === "PlayerJoined") {
-        info.innerHTML = "Waiting for other players to join";
-    } else if (Object.keys(json["state"])[0] == "MatchAborted") {
-        info.innerHTML = "<div style='color: red'>" + json["state"]["MatchAborted"] + "</div>";
+    // Some states are strings, some are objects.
+    const key = Object.keys(json["state"])[0];
+    const state = key == "0" ? json["state"] : key;
+
+    switch (state) {
+        case "PlayerJoined":
+            info.innerHTML = "Waiting for other players to join";
+            break;
+
+        case "MatchAborted":
+            info.innerHTML = "<div style='color: red'>" + json["state"]["MatchAborted"] + "</div>";
+            break;
+
+        case "WaitingForYourBid":
+            info.innerHTML = "Make your bid";
+            break;
+
+        case "WaitingForTheirBid":
+            info.innerHTML = "Waiting for player " + (json["history"]["game_history"]["bidding_history"]["current_bidder_index"] + 1) + " to bid";
+            break;
+    }
+}
+
+// Updates the names around the match surface to reflect the state sent by the server.
+function update_player_names(json) {
+    const PLAYER_PREFIXES = ["pb", "pl", "pt", "pr"];
+
+    // Clear old info.
+    for (const pref of PLAYER_PREFIXES) {
+        document.getElementById(pref + "_name").innerHTML = "";
+    }
+
+    // Player info is in the lobby history.
+    if (json["history"] === null || json["history"]["lobby_history"] === null) {
+        return;
+    }
+
+    // Display new info.
+    const player_count = json["history"]["lobby_history"]["player_count"];
+    const player_index = json["history"]["lobby_history"]["your_player_index"];
+
+    for (let i = 0; i < player_count; ++i) {
+        const index = (i - player_index + 4) % 4;
+        const e = document.getElementById(PLAYER_PREFIXES[index] + "_name");
+        e.innerHTML = "Player " + (i + 1);
+        e.style.setProperty("color", "black");
+
+        if (i == player_index) {
+            e.style.setProperty("font-weight", "bold");
+        }
+    }
+}
+
+// Updates the displayed cards for all players to match those sent by the server.
+function update_cards(json) {
+    const PLAYER_PREFIXES = ["pb", "pl", "pt", "pr"];
+
+    // Clear old info.
+    for (const pref of PLAYER_PREFIXES) {
+        document.getElementById(pref + "_hand").innerHTML = "";
+    }
+
+    // Hand info is in the game history.
+    if (json["history"] === null || json["history"]["game_history"] === null ||
+        json["history"]["game_history"]["hand"] === null) {
+        return;
+    }
+
+    // First, show the player's hand.
+    const pb_hand = document.getElementById("pb_hand");
+    for (const details of json["history"]["game_history"]["hand"]) {
+        const card = document.createElement("div");
+        card.classList.add("card");
+        card.innerHTML = details;
+
+        if (details.slice(-1) === "◆" || details.slice(-1) === "♥") {
+            // Red cards.
+            card.style.setProperty("color", "red");
+        } else if (details.slice(-1) === "★") {
+            // Joker.
+            card.style.setProperty("color", "blue");
+        }
+
+        pb_hand.appendChild(card);
     }
 }
 
@@ -90,10 +169,9 @@ function main() {
 
     socket.onmessage = (event) => {
         const json = JSON.parse(event.data);
-        set_stage(json);
-        set_info(json);
 
-        // Pretty print hand in response JSON.
+        // Pretty print hand in response JSON. This makes API responses easier
+        // for humans to parse.
         if (json["history"] !== null && json["history"]["game_history"] !== null &&
             json["history"]["game_history"]["hand"] !== null) {
             const hand = json["history"]["game_history"]["hand"];
@@ -101,6 +179,12 @@ function main() {
                 hand[i] = pretty_card(hand[i]);
             }
         }
+
+        // Update client visuals.
+        update_stage(json);
+        update_info(json);
+        update_player_names(json);
+        update_cards(json);
 
         // Add new response to top of state log.
         document.getElementById("states").prepend(document.createElement("hr"));

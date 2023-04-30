@@ -29,15 +29,39 @@ impl Bidding {
         debug_assert!(players.len() == 4);
 
         // Populate and shuffle deck.
-        let mut deck = (5..15).flat_map(|face|
-            vec![Card::SuitedCard(SuitedCard { face, suit: Suit::Spades }),
-                 Card::SuitedCard(SuitedCard { face, suit: Suit::Clubs }),
-                 Card::SuitedCard(SuitedCard { face, suit: Suit::Diamonds }),
-                 Card::SuitedCard(SuitedCard { face, suit: Suit::Hearts } )]
-        ).chain(vec![Card::SuitedCard(SuitedCard {face: 4, suit: Suit::Diamonds }),
-                     Card::SuitedCard(SuitedCard {face: 4, suit: Suit::Hearts }),
-                     Card::Joker]
-        ).collect::<Vec<_>>();
+        let mut deck = (5..15)
+            .flat_map(|face| {
+                vec![
+                    Card::SuitedCard(SuitedCard {
+                        face,
+                        suit: Suit::Spades,
+                    }),
+                    Card::SuitedCard(SuitedCard {
+                        face,
+                        suit: Suit::Clubs,
+                    }),
+                    Card::SuitedCard(SuitedCard {
+                        face,
+                        suit: Suit::Diamonds,
+                    }),
+                    Card::SuitedCard(SuitedCard {
+                        face,
+                        suit: Suit::Hearts,
+                    }),
+                ]
+            })
+            .chain(vec![
+                Card::SuitedCard(SuitedCard {
+                    face: 4,
+                    suit: Suit::Diamonds,
+                }),
+                Card::SuitedCard(SuitedCard {
+                    face: 4,
+                    suit: Suit::Hearts,
+                }),
+                Card::Joker,
+            ])
+            .collect::<Vec<_>>();
         deck.shuffle(&mut rand::thread_rng());
 
         // Deal hands.
@@ -99,15 +123,23 @@ impl Bidding {
         }
 
         // Can't bid miseres until everyone has had a chance to bid.
-        let can_bid_mis = self.prev_bids.iter().filter(|b| b.is_some()).collect::<Vec<_>>().len() == 4;
+        let can_bid_mis = self
+            .prev_bids
+            .iter()
+            .filter(|b| b.is_some())
+            .collect::<Vec<_>>()
+            .len()
+            == 4;
 
         let mut cur_bid = self.highest_bid.unwrap_or(Bid::Pass);
         while let Some(bid) = next_bid(cur_bid) {
             match bid {
                 Bid::Mis | Bid::OpenMis if can_bid_mis => {
                     bids.push(bid);
-                },
-                bid @ Bid::Tricks(_,_) => { bids.push(bid); },
+                }
+                bid @ Bid::Tricks(_, _) => {
+                    bids.push(bid);
+                }
                 _ => {}
             }
 
@@ -133,37 +165,35 @@ impl super::Stage for Bidding {
 
 // Returns the next highest bid.
 fn next_bid(bid: Bid) -> Option<Bid> {
-    if bid == Bid::Pass {
-        return Some(Bid::Tricks(6, BidSuit::Suit(Suit::Spades)));
+    match bid {
+        Bid::Pass => Some(Bid::Tricks(6, BidSuit::Suit(Suit::Spades))),
+
+        // Mis is worth 270 pts.
+        Bid::Tricks(8, BidSuit::Suit(Suit::Clubs)) => Some(Bid::Mis),
+        Bid::Mis => Some(Bid::Tricks(8, BidSuit::Suit(Suit::Diamonds))),
+
+        Bid::Tricks(count, suit) => {
+            let new_count = if suit == BidSuit::NoTrumps {
+                count + 1
+            } else {
+                count
+            };
+            if new_count == 11 {
+                return Some(Bid::OpenMis);
+            }
+
+            let new_suit = match suit {
+                BidSuit::Suit(Suit::Spades) => BidSuit::Suit(Suit::Clubs),
+                BidSuit::Suit(Suit::Clubs) => BidSuit::Suit(Suit::Diamonds),
+                BidSuit::Suit(Suit::Diamonds) => BidSuit::Suit(Suit::Hearts),
+                BidSuit::Suit(Suit::Hearts) => BidSuit::NoTrumps,
+                BidSuit::NoTrumps => BidSuit::Suit(Suit::Spades),
+            };
+
+            Some(Bid::Tricks(new_count, new_suit))
+        }
+
+        // No way to outbid open mis.
+        Bid::OpenMis => None,
     }
-
-    // Mis is worth 270 points.
-    if bid == Bid::Tricks(8, BidSuit::Suit(Suit::Clubs)) {
-        return Some(Bid::Mis);
-    }
-
-    if bid == Bid::Mis {
-        return Some(Bid::Tricks(8, BidSuit::Suit(Suit::Diamonds)));
-    }
-
-    // Only non-tricks bid left is open mis, for which there is no subsequent
-    // bid.
-    let Bid::Tricks(count, suit) = bid else {
-        return None;
-    };
-
-    let new_count = if suit == BidSuit::NoTrumps { count + 1 } else { count };
-    if new_count == 11 {
-        return Some(Bid::OpenMis);
-    }
-
-    let new_suit = match suit {
-        BidSuit::Suit(Suit::Spades) => BidSuit::Suit(Suit::Clubs),
-        BidSuit::Suit(Suit::Clubs) => BidSuit::Suit(Suit::Diamonds),
-        BidSuit::Suit(Suit::Diamonds) => BidSuit::Suit(Suit::Hearts),
-        BidSuit::Suit(Suit::Hearts) => BidSuit::NoTrumps,
-        BidSuit::NoTrumps => BidSuit::Suit(Suit::Spades),
-    };
-
-    Some(Bid::Tricks(new_count, new_suit))
 }

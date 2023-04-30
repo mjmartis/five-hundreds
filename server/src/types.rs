@@ -18,7 +18,7 @@ pub enum BidSuit {
 
 #[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Bid {
-    Tricks(usize, BidSuit),  // Invariant: first element in [6..10].
+    Tricks(usize, BidSuit), // Invariant: first element in [6..10].
     Mis,
     OpenMis,
     Pass,

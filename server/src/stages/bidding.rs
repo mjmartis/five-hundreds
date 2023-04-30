@@ -36,11 +36,14 @@ impl Bidding {
         // Deal hands.
         let chunks: Vec<&[Card]> = deck.chunks(10).collect();
         let hands: Vec<Vec<Card>> = chunks[0..4].iter().map(|h| h.to_vec()).collect();
+        debug_assert!(chunks.len() == 5);
 
         let kitty = chunks[4].to_vec();
+        debug_assert!(kitty.len() == 3);
 
         for (i, (id, history)) in players.iter_mut().enumerate() {
-            // Update history to include new hand.
+            // Clear old history and populate a new history with the new hand.
+            history.match_history.past_games = Vec::new();
             history.game_history = Some(api::GameHistory {
                 hand: hands[i].clone(),
                 bidding_history: api::BiddingHistory {

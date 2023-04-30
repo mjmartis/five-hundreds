@@ -18,60 +18,41 @@
         .card {
             display: inline;
             width: 50px;
-            height: 80px;
+            height: 70px;
             border-radius: 10px; 
             border: solid; 
-            margin-left: 15px;
             background: white;
             text-align: center;
             vertical-align: middle;
-            line-height: 80px;
+            line-height: 70px;
             font-family: sans-serif;
-            font-size: 2em;
+            font-size: 1.75em;
         }
 
-        .v_card {
-            display: inline;
-            width: 80px;
-            height: 50px;
-            border-radius: 10px; 
-            border: solid; 
-            margin-top: 15px;
-            margin-left: 15px;
-            background: white;
-            text-align: center;
-            vertical-align: middle;
-            line-height: 50px;
-            font-family: sans-serif;
-            font-size: 2em;
-        }
-
-        .h_hand {
+        #hand {
             background: lightgrey;
             width: 465px;
             height: 110px;
-        }
-
-        .v_hand {
-            background: lightgrey;
-            width: 110px;
-            height: 465px;
-            margin: auto;
+            text-align: center;
         }
 
         .surface {
             background: lightgreen;
+            width: 180px;
+            height: 180px;
         }
 
-        /* Two column UI. */
+        /* Three column UI. */
         .column {
             float: left;
+            width: 33.33%;
         }
-        .match {
-            width: 70%;
-        }
-        .steps {
-            width: 30%;
+
+        /* Clear floats after the columns */
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
         }
 
         /* Step UI starts greyed out. */
@@ -118,26 +99,21 @@
         <table id="table">
             <tr>
                 <td></td>
-                <td></td>
                 <td class="player_name" colspan="3" id="pt_name">Waiting...</td>
-                <td></td>
                 <td></td>
             </tr>
             <tr>
                 <td></td>
                 <td></td>
-                <td class="h_hand" id="pt_hand" colspan="3"></td>
+                <td></td>
                 <td></td>
                 <td></td>
             </tr>
             <tr>
                 <td class="player_name v_player_name" rowspan="3" id="pl_name">Waiting...</td>
-                <td class="v_hand" id="pl_hand" rowspan="3"></td>
-                </td>
                 <td class="surface"></td>
                 <td class="surface" id="pt_card"></td>
                 <td class="surface"></td>
-                <td class="v_hand" id="pr_hand" rowspan="3"></td>
                 <td class="player_name v_player_name" rowspan="3" id="pr_name">Waiting...</td>
             </tr>
             <tr>
@@ -152,18 +128,22 @@
             </tr>
             <tr>
                 <td></td>
-                <td></td>
-                <td class="h_hand" id="pb_hand" colspan="3"></td>
+                <td id="hand" colspan="3"></td>
                 <td></td>
             </tr>
             <tr>
                 <td></td>
-                <td></td>
                 <td class="player_name" colspan="3" id="pb_name">Waiting...</td>
-                <td></td>
                 <td></td>
             </tr>
         </table>
+        </div>
+
+        <div class="column">&nbsp;
+            <div id="bids"></div>
+            <div id="kitty"></div>
+            <div id="declare_joker"></div>
+            <div id="plays"></div>
         </div>
 
         <!-- Show client step options to the right of the match. -->

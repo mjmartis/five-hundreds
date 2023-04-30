@@ -78,11 +78,6 @@ function update_info(json) {
 function update_player_names(json) {
     const PLAYER_PREFIXES = ["pb", "pl", "pt", "pr"];
 
-    // Clear old info.
-    for (const pref of PLAYER_PREFIXES) {
-        document.getElementById(pref + "_name").innerHTML = "";
-    }
-
     // Player info is in the lobby history.
     if (json["history"] === null || json["history"]["lobby_history"] === null) {
         return;
@@ -106,12 +101,8 @@ function update_player_names(json) {
 
 // Updates the displayed cards for all players to match those sent by the server.
 function update_cards(json) {
-    const PLAYER_PREFIXES = ["pb", "pl", "pt", "pr"];
-
     // Clear old info.
-    for (const pref of PLAYER_PREFIXES) {
-        document.getElementById(pref + "_hand").innerHTML = "";
-    }
+    document.getElementById("hand").innerHTML = "";
 
     // Hand info is in the game history.
     if (json["history"] === null || json["history"]["game_history"] === null ||
@@ -119,8 +110,7 @@ function update_cards(json) {
         return;
     }
 
-    // First, show the player's hand.
-    const pb_hand = document.getElementById("pb_hand");
+    const hand = document.getElementById("hand");
     for (const details of json["history"]["game_history"]["hand"]) {
         const card = document.createElement("div");
         card.classList.add("card");
@@ -134,26 +124,7 @@ function update_cards(json) {
             card.style.setProperty("color", "blue");
         }
 
-        pb_hand.appendChild(card);
-    }
-
-    // Next, show the backs of everyone else's cards.
-    // TODO: account for number of cards played.
-    // TODO: fix.
-    for (const pref of PLAYER_PREFIXES) {
-        if (pref === "pb") {
-            continue;
-        }
-
-        const vert = pref == "pl" || pref == "pr";
-        const hand = document.getElementById(pref + "_hand");
-        for (let i = 0; i < 10; ++i) {
-            const card = document.createElement("div");
-            card.innerHTML = "&nbsp;&nbsp;&nbsp;";
-            card.classList.add(vert ? "v_card" : "card");
-            hand.appendChild(card);
-            hand.appendChild(document.createElement("br"));
-        }
+        hand.appendChild(card);
     }
 }
 

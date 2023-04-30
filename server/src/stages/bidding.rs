@@ -123,13 +123,7 @@ impl Bidding {
         }
 
         // Can't bid miseres until everyone has had a chance to bid.
-        let can_bid_mis = self
-            .prev_bids
-            .iter()
-            .filter(|b| b.is_some())
-            .collect::<Vec<_>>()
-            .len()
-            == 4;
+        let can_bid_mis = self.prev_bids.iter().flatten().count() == 4;
 
         let mut cur_bid = self.highest_bid.unwrap_or(Bid::Pass);
         while let Some(bid) = next_bid(cur_bid) {
@@ -137,7 +131,7 @@ impl Bidding {
                 Bid::Mis | Bid::OpenMis if can_bid_mis => {
                     bids.push(bid);
                 }
-                bid @ Bid::Tricks(_, _) => {
+                Bid::Tricks(_, _) => {
                     bids.push(bid);
                 }
                 _ => {}

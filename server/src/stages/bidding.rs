@@ -26,29 +26,14 @@ impl Bidding {
         clients: &events::ClientMap,
         first_bidder_index: usize,
     ) -> Self {
-        debug_assert!(players.len() == 4);
+        debug_assert_eq!(players.len(), 4);
 
         // Populate and shuffle deck.
         let mut deck = (5..15)
             .flat_map(|face| {
-                vec![
-                    Card::SuitedCard(SuitedCard {
-                        face,
-                        suit: Suit::Spades,
-                    }),
-                    Card::SuitedCard(SuitedCard {
-                        face,
-                        suit: Suit::Clubs,
-                    }),
-                    Card::SuitedCard(SuitedCard {
-                        face,
-                        suit: Suit::Diamonds,
-                    }),
-                    Card::SuitedCard(SuitedCard {
-                        face,
-                        suit: Suit::Hearts,
-                    }),
-                ]
+                [Suit::Spades, Suit::Clubs, Suit::Diamonds, Suit::Hearts]
+                    .iter()
+                    .map(move |suit| Card::SuitedCard(SuitedCard { face, suit: *suit }))
             })
             .chain(vec![
                 Card::SuitedCard(SuitedCard {
@@ -66,11 +51,10 @@ impl Bidding {
 
         // Deal hands.
         let chunks: Vec<&[Card]> = deck.chunks(10).collect();
+        debug_assert_eq!(chunks.len(), 5);
         let hands: Vec<Vec<Card>> = chunks[0..4].iter().map(|h| h.to_vec()).collect();
-        debug_assert!(chunks.len() == 5);
-
         let kitty = chunks[4].to_vec();
-        debug_assert!(kitty.len() == 3);
+        debug_assert_eq!(kitty.len(), 3);
 
         let new = Bidding {
             first_bidder_index,

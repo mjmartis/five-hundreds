@@ -91,7 +91,7 @@ function update_player_names(json) {
         const index = (i - player_index + 4) % 4;
         const e = document.getElementById(PLAYER_PREFIXES[index] + "_name");
         e.innerHTML = "Player " + (i + 1);
-        e.style.setProperty("color", "black");
+        e.classList.remove("greyed");
 
         if (i == player_index) {
             e.style.setProperty("font-weight", "bold");
@@ -184,8 +184,7 @@ function main() {
     socket.onopen = (event) => {
         // Enable step UI.
         const steps = document.getElementById("steps");
-        steps.style.setProperty("pointer-events", "auto");
-        steps.style.setProperty("opacity", 1.0);
+        steps.classList.remove("greyed");
     };
 
     // Step UI logic.

@@ -7,7 +7,6 @@
 
         /* Playing table UI. */
         .player_name {
-            color: lightgrey;
             text-align: center;
         }
 
@@ -48,17 +47,27 @@
             width: 33.33%;
         }
 
-        /* Clear floats after the columns */
+        /* Unavailable options are greyed. */
+        .greyed {
+            pointer-events: none;
+            opacity: 0.4;
+        }
+
+        /* Clear floats after the columns. */
         .row:after {
             content: "";
             display: table;
             clear: both;
         }
 
-        /* Step UI starts greyed out. */
-        #steps {
-            pointer-events: none;
-            opacity: 0.4;
+        /* Aux column. */
+        .red {
+            color: red;
+        }
+
+        #bid_info {
+            background: lightgrey;
+            font-size: 2em;
         }
 
         /* Step titles don't look like buttons. */
@@ -99,7 +108,7 @@
         <table id="table">
             <tr>
                 <td></td>
-                <td class="player_name" colspan="3" id="pt_name">Waiting...</td>
+                <td class="player_name greyed" colspan="3" id="pt_name">Waiting...</td>
                 <td></td>
             </tr>
             <tr>
@@ -110,11 +119,11 @@
                 <td></td>
             </tr>
             <tr>
-                <td class="player_name v_player_name" rowspan="3" id="pl_name">Waiting...</td>
+                <td class="player_name v_player_name greyed" rowspan="3" id="pl_name">Waiting...</td>
                 <td class="surface"></td>
                 <td class="surface" id="pt_card"></td>
                 <td class="surface"></td>
-                <td class="player_name v_player_name" rowspan="3" id="pr_name">Waiting...</td>
+                <td class="player_name v_player_name greyed" rowspan="3" id="pr_name">Waiting...</td>
             </tr>
             <tr>
                 <td class="surface" id="pl_card"></td>
@@ -133,21 +142,63 @@
             </tr>
             <tr>
                 <td></td>
-                <td class="player_name" colspan="3" id="pb_name">Waiting...</td>
+                <td class="player_name greyed" colspan="3" id="pb_name">Waiting...</td>
                 <td></td>
             </tr>
         </table>
         </div>
 
         <div class="column">&nbsp;
-            <div id="bids"></div>
+            <div id="bids" style="display: none">
+                <table id="bid_info">
+                    <h2>Available bids</h2>
+                    <tr>
+                        <td>6♠</td>
+                        <td>6♣</td>
+                        <td class="red">6◆</td>
+                        <td class="red">6♥</td>
+                        <td>6NT</td>
+                    </tr>
+                    <tr>
+                        <td>7♠</td>
+                        <td>7♣</td>
+                        <td class="red">7◆</td>
+                        <td class="red">7♥</td>
+                        <td>7NT</td>
+                    </tr>
+                    <tr>
+                        <td>8♠</td>
+                        <td>8♣</td>
+                        <td class="red">8◆</td>
+                        <td class="red">8♥</td>
+                        <td>8NT</td>
+                    </tr>
+                    <tr>
+                        <td>9♠</td>
+                        <td>9♣</td>
+                        <td class="red">9◆</td>
+                        <td class="red">9♥</td>
+                        <td>9NT</td>
+                    </tr>
+                    <tr>
+                        <td>10♠</td>
+                        <td>10♣</td>
+                        <td class="red">10◆</td>
+                        <td class="red">10♥</td>
+                        <td>10NT</td>
+                    </tr>
+                    <tr>
+                        <td colspan="5" style="text-align: center">Pass Misere Open</div>
+                    </tr>
+                </table>
+            </div>
             <div id="kitty"></div>
             <div id="declare_joker"></div>
             <div id="plays"></div>
         </div>
 
         <!-- Show client step options to the right of the match. -->
-        <div class="column steps" id="steps">
+        <div class="column steps greyed" id="steps">
             <!-- Join UI. -->
             <button type="button" class="collapse_button">Join</button>
             <div class="collapse_content">

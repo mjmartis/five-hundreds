@@ -20,6 +20,112 @@ function pretty_card(card_json) {
         SUITS[card_json['SuitedCard']['suit']];
 }
 
+// Takes in a bid JSON struct and returns a nicer string representation.
+function pretty_bid(bid_json) {
+    const SUITS = {
+        "Spades": "♠",
+        "Clubs": "♣",
+        "Diamonds": "◆",
+        "Hearts": "♥"
+    };
+
+    if (typeof(bid_json) === "string") {
+        return bid_json[0];
+    }
+
+    // Now we must have a count and suit.
+    const count = bid_json["Tricks"][0];
+    const suit = SUITS[bid_json["Tricks"][1]["Suit"]] || "NT";
+
+    return count + suit;
+}
+
+// Convert bid string back into the json struct expected by the server.
+function ugly_bid(bid) {
+    const SUITS = {
+        "♠": "Spades",
+        "♣": "Clubs",
+        "◆": "Diamonds",
+        "♥": "Hearts"
+    };
+
+    switch (bid) {
+        case "P":
+            return "Pass";
+
+        case "M":
+            return "Mis";
+
+        case "O":
+            return "OpenMis";
+
+        default: {
+            // Ten is the only bid that has a different number prefix size.
+            const num_length = bid[1] === "0" ? 2 : 1;
+            const count = parseInt(bid.slice(0, num_length));
+            const pretty_suit = bid.slice(num_length);
+
+            const suit = pretty_suit == "NT" ? "NoTrumps" : {
+                "Suit": SUITS[pretty_suit]
+            };
+
+            return {
+                "Tricks": [count, suit]
+            };
+        }
+    }
+}
+
+// Helper: create a new option for a select element that contains the given
+// text.
+function new_select_option(contents) {
+    const opt = document.createElement("option");
+    opt.value = contents;
+    opt.innerHTML = contents;
+    return opt;
+}
+
+// Inserts our bid-picker faux element into the given div.
+function insert_bid_picker(e) {
+    // Dodgy: use a custom property for our bid.
+    e.bid = "P";
+
+    // First comes a drop-down selector for bid count.
+    const count = document.createElement("select");
+    e.appendChild(count);
+    count.appendChild(new_select_option("P"));
+    for (const c of [6, 7, 8, 9, 10]) {
+        count.add(new_select_option(c));
+    }
+    count.appendChild(new_select_option("M"));
+    count.appendChild(new_select_option("O"));
+
+    // Next comes drop-down selector for suit.
+    const suit = document.createElement("select");
+    suit.disabled = true;
+    e.appendChild(suit);
+    for (const s of ["♠", "♣", "◆", "♥", "NT"]) {
+        suit.add(new_select_option(s));
+    }
+
+    // Update custom property (and enable/disable suit selector) when a new
+    // count option is selected.
+    const d = e;
+    count.onchange = function() {
+        suit.disabled = isNaN(parseInt(count.value[0]));
+        if (suit.disabled) {
+            d.bid = count.value;
+        } else {
+            d.bid = count.value + suit.value;
+        }
+    }
+
+    // Update custom property when a new suit is selected.
+    suit.onchange = function() {
+        d.bid = count.value + suit.value;
+    }
+}
+
 // Updates the stage text to match the session state sent by the server.
 function update_stage(json) {
     const stage = document.getElementById("stage");
@@ -128,6 +234,31 @@ function update_cards(json) {
     }
 }
 
+function update_aux_ui(json) {
+    // Clear old info.
+    const bids = document.getElementById("bids");
+    bids.style.setProperty("display", "none");
+    for (const cell of bids.getElementsByTagName("td")) {
+        cell.classList.add("greyed");
+    }
+
+    // Available bids are only shown when it's your turn to bid.
+    if (json["state"] === null || json["state"]["WaitingForYourBid"] === undefined) {
+        return;
+    }
+
+    // Conditionally ungrey unavailable bids.
+    bids.style.setProperty("display", "block");
+    const bidOptions = json["state"]["WaitingForYourBid"];
+    for (const bid of bidOptions) {
+        for (const cell of bids.getElementsByTagName("td")) {
+            if (cell.innerHTML === bid) {
+                cell.classList.remove("greyed");
+            }
+        }
+    }
+}
+
 // Main logic.
 function main() {
     renderjson.set_show_to_level("all");
@@ -154,6 +285,11 @@ function main() {
         });
     }
 
+    // Insert pseudo elements for choosing bids.
+    for (const e of document.getElementsByClassName("bid_picker")) {
+        insert_bid_picker(e);
+    }
+
     // Connect to the server.
     const socket = new WebSocket("ws://192.168.1.69:8080");
 
@@ -170,11 +306,20 @@ function main() {
             }
         }
 
+        // Also pretty print bids in response JSON.
+        if (json["state"] !== null && json["state"]["WaitingForYourBid"] !== undefined) {
+            const bids = json["state"]["WaitingForYourBid"];
+            for (let i = 0; i < bids.length; ++i) {
+                bids[i] = pretty_bid(bids[i]);
+            }
+        }
+
         // Update client visuals.
         update_stage(json);
         update_info(json);
         update_player_names(json);
         update_cards(json);
+        update_aux_ui(json);
 
         // Add new response to top of state log.
         document.getElementById("states").prepend(document.createElement("hr"));
@@ -197,6 +342,13 @@ function main() {
         socket.send(JSON.stringify(payload));
     });
 
+    // Send Bid step.
+    document.getElementById("bid_button").addEventListener("click", () => {
+        const payload = {
+            "MakeBid": ugly_bid(document.getElementById("picked_bid").bid),
+        };
+        socket.send(JSON.stringify(payload));
+    });
 }
 
 main();

@@ -148,10 +148,11 @@
         </table>
         </div>
 
+        <!-- Display aux UI in the middle column. -->
         <div class="column">&nbsp;
             <div id="bids" style="display: none">
+                <h2>Available bids</h2>
                 <table id="bid_info">
-                    <h2>Available bids</h2>
                     <tr>
                         <td>6♠</td>
                         <td>6♣</td>
@@ -174,9 +175,7 @@
                         <td>8NT</td>
                     </tr>
                     <tr>
-                        <td>9♠</td>
-                        <td>9♣</td>
-                        <td class="red">9◆</td>
+                        <td>9♠</td> <td>9♣</td> <td class="red">9◆</td>
                         <td class="red">9♥</td>
                         <td>9NT</td>
                     </tr>
@@ -188,7 +187,11 @@
                         <td>10NT</td>
                     </tr>
                     <tr>
-                        <td colspan="5" style="text-align: center">Pass Misere Open</div>
+                        <td></td>
+                        <td>P</td>
+                        <td>M</td>
+                        <td>O</td>
+                        <td></td>
                     </tr>
                 </table>
             </div>
@@ -213,7 +216,10 @@
             <hr>
 
             <button type="button" class="collapse_button">Make bid</button>
-            <div class="collapse_content">Bid content</div>
+            <div class="collapse_content">
+                <div id="picked_bid" class="bid_picker"></div>
+                <button type="button" id="bid_button">Submit</button>
+            </div>
             <hr>
 
             <div id="states"></div>

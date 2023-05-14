@@ -9,7 +9,7 @@ use log::error;
 use tokio::sync::mpsc;
 
 // Unique ID used to identify new and resuming clients from the game engine.
-pub type ClientId = u128;
+pub type ClientId = String;
 
 // The events that could originate from the client. Notably, one option is a handle with which the
 // game engine should subsequently reply to the client.
@@ -44,7 +44,7 @@ impl ClientMap {
     }
 
     pub fn add_client(&mut self, id: &ClientId, tx: EngineEventSender) {
-        self.client_txs.insert(*id, tx);
+        self.client_txs.insert(id.clone(), tx);
     }
 
     pub fn remove_client(&mut self, id: &ClientId) {

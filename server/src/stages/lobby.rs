@@ -57,7 +57,7 @@ impl super::Stage for Lobby {
                 // Note: starts with incorrect player count to match the other histories that are
                 // now out-of-date.
                 players.push((
-                    *client_id,
+                    (*client_id.clone()).to_string(),
                     api::History {
                         lobby_history: api::LobbyHistory {
                             player_count: players.len(),

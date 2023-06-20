@@ -125,7 +125,7 @@ pub struct LobbyHistory {
 }
 
 // Background information about the match.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct MatchHistory {
     // Game history. TODO make more sophisticated.
     //   (team 1 score delta, team 1 score total,

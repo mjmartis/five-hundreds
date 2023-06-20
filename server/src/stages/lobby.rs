@@ -71,13 +71,9 @@ impl super::Stage for Lobby {
                             your_team_index: players.len() % 2,
                         }),
                         match_history: Some(api::MatchHistory {
-                            past_games: Vec::new(),
-                            match_aborted_reason: None,
-                            winning_team_index: None,
+                          ..Default::default()
                         }),
-                        game_history: None,
-                        excluded_reason: None,
-                        error: None,
+                        ..Default::default()
                     },
                 ));
                 info!("[client {}] joined.", client_id);

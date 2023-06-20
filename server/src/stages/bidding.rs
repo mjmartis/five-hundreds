@@ -75,20 +75,25 @@ impl Bidding {
                 hand: hands[i].clone(),
                 bidding_history: api::BiddingHistory {
                     bids: vec![None; 4],
-                    // First bidder has bid options.
-                    bid_options: if i == first_bidder_index {
-                        Some(new.available_bids(i))
-                    } else {
-                        None
-                    },
                     current_bidder_index: first_bidder_index,
+                    bid_options: None,
                 },
                 winning_bid_history: None,
                 plays_history: None,
             });
 
-            // Send off hands and bidding cues.
+            // Send off hands to players.
             clients.send_event(id, history.clone(), api::CurrentState::HandDealt);
+
+            // Send off bidding cues. Only the first bidder has bid options.
+            if i == first_bidder_index {
+                history
+                    .game_history
+                    .as_mut()
+                    .unwrap()
+                    .bidding_history
+                    .bid_options = Some(new.available_bids(i));
+            }
             clients.send_event(
                 id,
                 history.clone(),

@@ -33,8 +33,11 @@ impl super::Stage for Lobby {
                 if let Some(i) = player_index {
                     clients.send_event(
                         client_id,
-                        Some(players[i].1.clone()),
-                        api::CurrentState::Excluded("Already joined.".to_string()),
+                        api::History {
+                            excluded_reason: Some("Already joined.".to_string()),
+                            ..players[i].1.clone()
+                        },
+                        api::CurrentState::Excluded,
                     );
                     info!(
                         "[client {}] excluded because they have already joined.",
@@ -47,8 +50,11 @@ impl super::Stage for Lobby {
                 if players.len() == 4 {
                     clients.send_event(
                         client_id,
-                        None,
-                        api::CurrentState::Excluded("Game ongoing.".to_string()),
+                        api::History {
+                            excluded_reason: Some("Game ongoing.".to_string()),
+                            ..Default::default()
+                        },
+                        api::CurrentState::Excluded,
                     );
                     info!("[client {}] excluded due to ongoing game.", client_id);
                     return self;
@@ -59,23 +65,29 @@ impl super::Stage for Lobby {
                 players.push((
                     (*client_id.clone()).to_string(),
                     api::History {
-                        lobby_history: api::LobbyHistory {
+                        lobby_history: Some(api::LobbyHistory {
                             player_count: players.len(),
                             your_player_index: players.len(),
                             your_team_index: players.len() % 2,
-                        },
-                        match_history: api::MatchHistory {
+                        }),
+                        match_history: Some(api::MatchHistory {
                             past_games: Vec::new(),
-                        },
+                            match_aborted_reason: None,
+                            winning_team_index: None,
+                        }),
                         game_history: None,
+                        excluded_reason: None,
+                        error: None,
                     },
                 ));
                 info!("[client {}] joined.", client_id);
 
                 // Let players know another has joined.
                 for (id, history) in &mut *players {
-                    history.lobby_history.player_count += 1;
-                    clients.send_event(id, Some(history.clone()), api::CurrentState::PlayerJoined);
+                    // Invariant: all instances added to the players list have
+                    // lobby history populated.
+                    history.lobby_history.as_mut().unwrap().player_count += 1;
+                    clients.send_event(id, history.clone(), api::CurrentState::PlayerJoined);
                 }
 
                 // All players newly joined.
@@ -95,8 +107,15 @@ impl super::Stage for Lobby {
                 );
                 clients.send_event(
                     client_id,
-                    player_index.map(|i| players[i].1.clone()),
-                    api::CurrentState::Error("Invalid step in the lobby stage.".to_string()),
+                    if let Some(i) = player_index {
+                        api::History {
+                            error: Some("Invalid step in the lobby stage.".to_string()),
+                            ..players[i].1.clone()
+                        }
+                    } else {
+                        Default::default()
+                    },
+                    api::CurrentState::Error,
                 );
 
                 self

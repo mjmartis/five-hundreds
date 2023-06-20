@@ -74,10 +74,21 @@ impl Session {
                                 continue;
                             }
 
+                            let aborted_history = api::History {
+                                match_history: history.match_history.clone().map(|h| {
+                                    api::MatchHistory {
+                                        match_aborted_reason: Some(
+                                            "Player disconnected".to_string(),
+                                        ),
+                                        ..h
+                                    }
+                                }),
+                                ..history.clone()
+                            };
                             self.clients.send_event(
                                 player_id,
-                                Some(history.clone()),
-                                api::CurrentState::MatchAborted("Player disconnected".to_string()),
+                                aborted_history,
+                                api::CurrentState::MatchAborted,
                             );
                         }
 
@@ -96,10 +107,19 @@ impl Session {
                     if self.player_index(id).is_some() {
                         // Let everyone know the game can't continue.
                         for (player_id, history) in &self.players {
+                            let error_history = api::History {
+                                match_history: history.match_history.clone().map(|h| {
+                                    api::MatchHistory {
+                                        match_aborted_reason: Some("Player left".to_string()),
+                                        ..h
+                                    }
+                                }),
+                                ..history.clone()
+                            };
                             self.clients.send_event(
                                 player_id,
-                                Some(history.clone()),
-                                api::CurrentState::MatchAborted("Player left".to_string()),
+                                error_history,
+                                api::CurrentState::MatchAborted,
                             );
                         }
 
@@ -109,8 +129,11 @@ impl Session {
                         info!("[client {}] tried to leave without joining.", id);
                         self.clients.send_event(
                             id,
-                            None,
-                            api::CurrentState::Error("Tried to leave without joining.".to_string()),
+                            api::History {
+                                error: Some("Tried to leave without joining.".to_string()),
+                                ..Default::default()
+                            },
+                            api::CurrentState::Error,
                         );
                     }
                 }

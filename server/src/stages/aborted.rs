@@ -16,12 +16,24 @@ impl super::Stage for Aborted {
         client_id: &events::ClientId,
         _step: &api::Step,
     ) -> Box<dyn super::Stage> {
-        clients.send_event(
-            client_id,
-            // Include player history if this client is a valid player.
-            player_index.map(|i| players[i].1.clone()),
-            api::CurrentState::MatchAborted("Player left.".to_string()),
-        );
+        // Include player history if this client is a valid player.
+        let history = if let Some(i) = player_index {
+            api::History {
+                match_history: players[i]
+                    .1
+                    .match_history
+                    .clone()
+                    .map(|h| api::MatchHistory {
+                        match_aborted_reason: Some("Player left.".to_string()),
+                        ..h
+                    }),
+                ..players[i].1.clone()
+            }
+        } else {
+            Default::default()
+        };
+
+        clients.send_event(client_id, history, api::CurrentState::MatchAborted);
 
         self
     }

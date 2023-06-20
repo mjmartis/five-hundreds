@@ -51,12 +51,7 @@ impl ClientMap {
         self.client_txs.remove(id);
     }
 
-    pub fn send_event(
-        &self,
-        id: &ClientId,
-        history: Option<api::History>,
-        state: api::CurrentState,
-    ) {
+    pub fn send_event(&self, id: &ClientId, history: api::History, state: api::CurrentState) {
         let Some(tx) = self.client_txs.get(id) else {
             error!("Attempted to send message to unregistered [client {}].", id);
             return;

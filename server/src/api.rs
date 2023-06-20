@@ -37,30 +37,32 @@ pub enum CurrentState {
     // TODO: transmit e.g. player names.
     PlayerJoined,
 
-    // You have been rejected (e.g. because a game is ongoing).
-    Excluded(String), // Reason.
+    // You have been rejected (e.g. because a game is ongoing). The reason is
+    // stored in the lobby history struct.
+    Excluded,
 
     // Your hand has been dealt.
     // types::Card vector of length 10 stored in history struct.
     HandDealt,
 
-    // Your turn to bid.
-    WaitingForYourBid(Vec<types::Bid>), // Bids available to you.
+    // Your turn to bid. Your bid options are stored in the bidding history
+    // struct.
+    WaitingForYourBid,
 
     // Waiting for another player to bid.
     // Current bidder stored in history struct.
     WaitingForTheirBid,
 
-    // Another player has bid.
-    // Their bid stored in history struct.
-    TheyBid(usize), // The player who made their bid.
+    // Another player has bid. Their bid is stored in history struct.
+    TheyBid,
 
     // A player (possibly you) has won the bid.
     // Winning player stored in history struct.
     BidWon,
 
     // When you must choose how to use the kitty (i.e. you have won the bid).
-    WaitingForYourKitty(Vec<types::Card>), // Invariant: length of 3.
+    // Kitty is stored in the bidding won history struct.
+    WaitingForYourKitty,
 
     // When they must choose how to use the kitty.
     WaitingForTheirKitty,
@@ -75,30 +77,36 @@ pub enum CurrentState {
     // types::Suit stored in history struct.
     JokerSuitAnnounced,
 
-    // Waiting for you to choose a card to play.
-    WaitingForYourPlay(Vec<types::Play>),
+    // Waiting for you to choose a card to play. Your options are stored in the
+    // plays history struct.
+    WaitingForYourPlay,
 
     // Waiting for another player to play.
-    // Current playing player (and trick so far) stored in history struct.
+    // Current playing player (and trick so far) stored in plays history struct.
     WaitingForTheirPlay,
 
-    // You or another player has won the trick.
-    TrickWon(usize), // Index of winning player.
+    // You or another player has won the trick. The winning player is stored in
+    // the plays history struct.
+    TrickWon,
 
-    // Your or the other team have won the game.
-    GameWon(usize), // Index of winning team (i.e. in [0, 1]).
+    // Your or the other team have won the game. The index of the winning team
+    // is stored in the match history struct.
+    GameWon,
 
     // The new scores have been included in the history struct.
     ScoresUpdated,
 
-    // A team has won the entire match.
-    MatchWon(usize), // Index of winning team (i.e. in [0, 1]).
+    // A team has won the entire match. The index of the winning team is stored
+    // in the match history struct.
+    MatchWon,
 
-    // The match has unexpectedly ended (e.g. a player has left).
-    MatchAborted(String), // Reason.
+    // The match has unexpectedly ended (e.g. a player has left). The reason is
+    // stored in the history struct.
+    MatchAborted,
 
-    // Some other in-game error (e.g. tried to play an invalid card).
-    Error(String), // Reason.
+    // Some other in-game error (e.g. tried to play an invalid card). The
+    // reason is stored in the history struct.
+    Error,
 }
 
 // Static info.
@@ -123,11 +131,20 @@ pub struct MatchHistory {
     //   (team 1 score delta, team 1 score total,
     //    team 2 score delta, team 2 score total).
     pub past_games: Vec<(isize, isize, isize, isize)>,
+
+    // The index of the team that won the entire match, if the match is over.
+    pub winning_team_index: Option<usize>,
+
+    // The reason the match was aborted (e.g. a player left), if it has been.
+    pub match_aborted_reason: Option<String>,
 }
 
 // Background information about the bidding.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BiddingHistory {
+    // Possible bids you can make, if it is your turn to bid.
+    pub bid_options: Option<Vec<types::Bid>>,
+
     // The last bids made by each player. Ordered from player 1 to player 4.
     pub bids: Vec<Option<types::Bid>>, // Invariant: length of 4.
 
@@ -140,6 +157,9 @@ pub struct WinningBidHistory {
     pub winning_bidder_index: usize,
 
     pub winning_bid: types::Bid, // Invariant: not a Pass.
+
+    // The cards in your kitty, if you won the bidding.
+    pub kitty: Option<Vec<types::Card>>,
 }
 
 // Background information about the tricks being played.
@@ -162,11 +182,17 @@ pub struct PlaysHistory {
     // doesn't play.
     pub previous_trick: Option<Vec<Option<types::Play>>>,
 
+    // The index of the player who won the last trick, if there is one.
+    pub previous_trick_winner: Option<usize>,
+
     // The ongoing trick. Listed in order from player 1 to player 4.
     pub current_trick: Vec<Option<types::Play>>,
 
     // Index in the player list of the currently-playing player.
     pub currently_playing_player_index: usize,
+
+    // Your possible plays, if it is your turn to play a card.
+    pub play_options: Option<Vec<types::Play>>,
 }
 
 // Background information about the current game (i.e. the current bidding,
@@ -183,21 +209,26 @@ pub struct GameHistory {
     pub plays_history: Option<PlaysHistory>,
 }
 
-// Background information about the session. Sub-structs are populated as they become valid.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+// Background information about the session. Sub-structs are populated as they
+// become valid.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct History {
-    pub lobby_history: LobbyHistory,
+    pub lobby_history: Option<LobbyHistory>,
 
-    pub match_history: MatchHistory,
+    pub match_history: Option<MatchHistory>,
 
     pub game_history: Option<GameHistory>,
+
+    // The reason you have been excluded from the game, if there is one.
+    pub excluded_reason: Option<String>,
+
+    // Some other error, if there is one.
+    pub error: Option<String>,
 }
 
 // Top level state information sent to the client.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct State {
     pub state: CurrentState,
-
-    // Only populated if the client is a player.
-    pub history: Option<History>,
+    pub history: History,
 }

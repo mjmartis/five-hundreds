@@ -164,7 +164,7 @@ fn pretty_num(n: u128) -> String {
     let mut chars = Vec::new();
     let mut rem = n as usize;
     while rem > 0 {
-        chars.push(CHARSET[(rem % CHARSET.len())]);
+        chars.push(CHARSET[rem % CHARSET.len()]);
         rem /= CHARSET.len();
     }
 

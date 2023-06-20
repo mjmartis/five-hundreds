@@ -66,11 +66,21 @@ impl Bidding {
 
         for (i, (id, history)) in players.iter_mut().enumerate() {
             // Clear old history and populate a new history with the new hand.
-            history.match_history.past_games = Vec::new();
+            history.match_history = Some(api::MatchHistory {
+                past_games: Vec::new(),
+                winning_team_index: None,
+                match_aborted_reason: None,
+            });
             history.game_history = Some(api::GameHistory {
                 hand: hands[i].clone(),
                 bidding_history: api::BiddingHistory {
                     bids: vec![None; 4],
+                    // First bidder has bid options.
+                    bid_options: if i == first_bidder_index {
+                        Some(new.available_bids(i))
+                    } else {
+                        None
+                    },
                     current_bidder_index: first_bidder_index,
                 },
                 winning_bid_history: None,
@@ -78,12 +88,12 @@ impl Bidding {
             });
 
             // Send off hands and bidding cues.
-            clients.send_event(id, Some(history.clone()), api::CurrentState::HandDealt);
+            clients.send_event(id, history.clone(), api::CurrentState::HandDealt);
             clients.send_event(
                 id,
-                Some(history.clone()),
+                history.clone(),
                 if i == first_bidder_index {
-                    api::CurrentState::WaitingForYourBid(new.available_bids(i))
+                    api::CurrentState::WaitingForYourBid
                 } else {
                     api::CurrentState::WaitingForTheirBid
                 },

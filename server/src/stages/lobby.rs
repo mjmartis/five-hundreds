@@ -71,7 +71,7 @@ impl super::Stage for Lobby {
                             your_team_index: players.len() % 2,
                         }),
                         match_history: Some(api::MatchHistory {
-                          ..Default::default()
+                            ..Default::default()
                         }),
                         ..Default::default()
                     },
@@ -103,13 +103,11 @@ impl super::Stage for Lobby {
                 );
                 clients.send_event(
                     client_id,
-                    if let Some(i) = player_index {
-                        api::History {
-                            error: Some("Invalid step in the lobby stage.".to_string()),
-                            ..players[i].1.clone()
-                        }
-                    } else {
-                        Default::default()
+                    api::History {
+                        error: Some("Invalid step in the lobby stage.".to_string()),
+                        ..player_index
+                            .map(|i| players[i].1.clone())
+                            .unwrap_or(Default::default())
                     },
                     api::CurrentState::Error,
                 );

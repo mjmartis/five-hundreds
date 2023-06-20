@@ -30,7 +30,10 @@ impl super::Stage for Aborted {
                 ..players[i].1.clone()
             }
         } else {
-            Default::default()
+            api::History {
+                error: Some("Match aborted".to_string()),
+                ..Default::default()
+            }
         };
 
         clients.send_event(client_id, history, api::CurrentState::MatchAborted);

@@ -54,7 +54,7 @@ pub enum CurrentState {
     WaitingForTheirBid,
 
     // Another player has bid. Their bid is stored in history struct.
-    TheyBid,
+    PlayerBid,
 
     // A player (possibly you) has won the bid.
     // Winning player stored in history struct.

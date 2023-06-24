@@ -8,7 +8,6 @@ use log::{error, info};
 use rand::seq::SliceRandom;
 use std::debug_assert;
 
-use super::process_bad_step;
 use super::Stage;
 
 pub struct Bidding {
@@ -207,10 +206,7 @@ impl Stage for Bidding {
                         // first entered the bidding stage.
                         debug_assert!(history.game_history.is_some());
                         history.game_history.as_mut().unwrap().bidding_history.bids[i] = Some(*bid);
-
-                        if j != i {
-                            clients.send_event(id, history.clone(), api::CurrentState::TheyBid);
-                        }
+                        clients.send_event(id, history.clone(), api::CurrentState::PlayerBid);
                     }
 
                     // Second broadcast the next bidder.
@@ -251,7 +247,32 @@ impl Stage for Bidding {
                 self
             }
 
-            bad_step => process_bad_step(self, players, player_index, clients, client_id, bad_step),
+            bad_step => {
+                error!(
+                    "[client {}] tried an invalid step in bidding: {:?}",
+                    client_id, bad_step
+                );
+
+                let state = match player_index {
+                    None => api::CurrentState::Error,
+                    Some(i) if i == (self.first_bidder_index + self.bids_made) % 4 => {
+                        api::CurrentState::WaitingForYourBid
+                    }
+                    _ => api::CurrentState::WaitingForTheirBid,
+                };
+                clients.send_event(
+                    client_id,
+                    api::History {
+                        error: Some("Invalid step during bidding.".to_string()),
+                        ..player_index
+                            .map(|i| players[i].1.clone())
+                            .unwrap_or(Default::default())
+                    },
+                    state,
+                );
+
+                self
+            }
         }
     }
 }

@@ -1,7 +1,6 @@
 // The stage of the session where players are waiting to join a new game.
 
 use super::bidding;
-use super::process_bad_step;
 use super::Stage;
 
 use crate::api;
@@ -98,7 +97,28 @@ impl Stage for Lobby {
             }
 
             // A client has made a step that isn't valid in the lobby.
-            bad_step => process_bad_step(self, players, player_index, clients, client_id, step),
+            bad_step => {
+                error!(
+                    "[client {}] tried an invalid step in the lobby: {:?}",
+                    client_id, bad_step
+                );
+                clients.send_event(
+                    client_id,
+                    api::History {
+                        error: Some("Invalid step in lobby.".to_string()),
+                        ..player_index
+                            .map(|i| players[i].1.clone())
+                            .unwrap_or(Default::default())
+                    },
+                    if player_index.is_some() {
+                        api::CurrentState::PlayerJoined
+                    } else {
+                        api::CurrentState::Excluded
+                    },
+                );
+
+                self
+            }
         }
     }
 }

@@ -29,27 +29,3 @@ pub trait Stage {
         step: &api::Step,
     ) -> Box<dyn Stage>;
 }
-
-// Common handling of an invalid response.
-fn process_bad_step(
-    stage: Box<dyn Stage>,
-    players: &mut Vec<(events::ClientId, api::History)>,
-    player_index: Option<usize>,
-    clients: &events::ClientMap,
-    client_id: &events::ClientId,
-    step: &api::Step,
-) -> Box<dyn Stage> {
-    error!("[client {}] tried an invalid step: {:?}", client_id, step);
-    clients.send_event(
-        client_id,
-        api::History {
-            error: Some("Invalid step.".to_string()),
-            ..player_index
-                .map(|i| players[i].1.clone())
-                .unwrap_or(Default::default())
-        },
-        api::CurrentState::Error,
-    );
-
-    stage
-}

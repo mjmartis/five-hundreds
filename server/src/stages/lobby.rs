@@ -1,6 +1,8 @@
 // The stage of the session where players are waiting to join a new game.
 
 use super::bidding;
+use super::process_bad_step;
+use super::Stage;
 
 use crate::api;
 use crate::events;
@@ -17,15 +19,15 @@ impl Lobby {
     }
 }
 
-impl super::Stage for Lobby {
+impl Stage for Lobby {
     fn process_step(
-        self: Box<Self>,
+        mut self: Box<Self>,
         players: &mut Vec<(events::ClientId, api::History)>,
         player_index: Option<usize>,
         clients: &events::ClientMap,
         client_id: &events::ClientId,
         step: &api::Step,
-    ) -> Box<dyn super::Stage> {
+    ) -> Box<dyn Stage> {
         match &step {
             // A client is attempting to join.
             api::Step::Join(_) => {
@@ -96,24 +98,7 @@ impl super::Stage for Lobby {
             }
 
             // A client has made a step that isn't valid in the lobby.
-            bad_step => {
-                error!(
-                    "[client {}] tried an invalid step in the lobby stage: {:?}",
-                    client_id, bad_step
-                );
-                clients.send_event(
-                    client_id,
-                    api::History {
-                        error: Some("Invalid step in the lobby stage.".to_string()),
-                        ..player_index
-                            .map(|i| players[i].1.clone())
-                            .unwrap_or(Default::default())
-                    },
-                    api::CurrentState::Error,
-                );
-
-                self
-            }
+            bad_step => process_bad_step(self, players, player_index, clients, client_id, step),
         }
     }
 }

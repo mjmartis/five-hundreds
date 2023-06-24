@@ -168,7 +168,7 @@ impl Stage for Bidding {
                             client_id,
                             api::History {
                                 error: Some("Not your turn to bid.".to_string()),
-                                ..Default::default()
+                                ..players[i].1.clone()
                             },
                             api::CurrentState::WaitingForTheirBid,
                         );
@@ -186,7 +186,7 @@ impl Stage for Bidding {
                                     "You tried to make a bid that is unavailable to you."
                                         .to_string(),
                                 ),
-                                ..Default::default()
+                                ..players[i].1.clone()
                             },
                             api::CurrentState::WaitingForYourBid,
                         );
@@ -201,21 +201,19 @@ impl Stage for Bidding {
                     self.highest_bid = Some(*bid);
                     self.bids_made += 1;
 
-                    // First, tell only the other players that this player has bid.
+                    // First add the bid to everyone's history.
                     for (j, (id, history)) in players.iter_mut().enumerate() {
-                        if j == i {
-                            continue;
-                        }
-
                         // Invariant: this should have been populated when we
                         // first entered the bidding stage.
                         debug_assert!(history.game_history.is_some());
-
                         history.game_history.as_mut().unwrap().bidding_history.bids[i] = Some(*bid);
-                        clients.send_event(id, history.clone(), api::CurrentState::TheyBid);
+
+                        if j != i {
+                            clients.send_event(id, history.clone(), api::CurrentState::TheyBid);
+                        }
                     }
 
-                    // Then, broadcast the next bidder.
+                    // Second broadcast the next bidder.
                     let new_bidder_index = (self.first_bidder_index + self.bids_made) % 4;
                     for (j, (id, history)) in players.iter_mut().enumerate() {
                         let bid_history =
@@ -243,7 +241,7 @@ impl Stage for Bidding {
                     clients.send_event(
                         client_id,
                         api::History {
-                            error: Some("You are not a player in this game".to_string()),
+                            error: Some("You are not a player in this game.".to_string()),
                             ..Default::default()
                         },
                         api::CurrentState::Error,

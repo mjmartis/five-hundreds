@@ -35,10 +35,10 @@ impl Stage for Lobby {
                     clients.send_event(
                         client_id,
                         api::History {
-                            excluded_reason: Some("Already joined.".to_string()),
+                            error: Some("Already joined.".to_string()),
                             ..players[i].1.clone()
                         },
-                        api::CurrentState::Excluded,
+                        api::CurrentState::PlayerJoined,
                     );
                     info!(
                         "[client {}] excluded because they have already joined.",

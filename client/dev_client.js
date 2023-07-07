@@ -149,23 +149,39 @@ function updateStage(json) {
     const stage = document.getElementById("stage");
     stage.innerHTML = "";
 
-    // Some states are strings, some are objects.
-    const key = Object.keys(json["state"])[0];
-    const state = key == "0" ? json["state"] : key;
-
-    switch (state) {
+    switch (json["state"]) {
         case "PlayerJoined":
             stage.innerHTML = "Lobby";
-            break;
-
-        case "MatchAborted":
-            // Display red aborted title.
-            stage.innerHTML = "<div style='color: red'>Aborted</div>";
             break;
 
         case "WaitingForTheirBid":
         case "WaitingForYourBid":
             stage.innerHTML = "Bidding";
+            break;
+
+        case "WaitingForTheirKitty":
+        case "WaitingForYourKitty":
+            stage.innerHTML = "Waiting for kitty";
+            break;
+
+        case "WaitingForTheirPlay":
+        case "WaitingForYourPlay":
+            // TODO: update this to use info in history struct.
+            stage.innerHTML = "Playing";
+            break;
+
+        case "Error":
+            // Display in red.
+            stage.innerHTML = "<div style='color: red'>Error</div>";
+            break;
+
+        case "Excluded":
+            // Display in red.
+            stage.innerHTML = "<div style='color: red'>Excluded</div>";
+
+        case "MatchAborted":
+            // Display in red.
+            stage.innerHTML = "<div style='color: red'>Aborted</div>";
             break;
     }
 }
@@ -175,17 +191,17 @@ function updateInfo(json) {
     const info = document.getElementById("info");
     info.innerHTML = "";
 
-    // Some states are strings, some are objects.
-    const key = Object.keys(json["state"])[0];
-    const state = key == "0" ? json["state"] : key;
+    // If there's any error, display it in red.
+    const err_text = inner_field(json, ["history", "error"]);
+    console.log(err_text);
+    if (err_text) {
+        info.innerHTML = "<div style='color: red'>" + err_text + "</div>";
+        return;
+    }
 
-    switch (state) {
+    switch (json["state"]) {
         case "PlayerJoined":
             info.innerHTML = "Waiting for other players to join";
-            break;
-
-        case "MatchAborted":
-            info.innerHTML = "<div style='color: red'>" + json["state"]["MatchAborted"] + "</div>";
             break;
 
         case "WaitingForYourBid":
@@ -194,6 +210,27 @@ function updateInfo(json) {
 
         case "WaitingForTheirBid":
             info.innerHTML = "Waiting for player " + (json["history"]["game_history"]["bidding_history"]["current_bidder_index"] + 1) + " to bid";
+            break;
+
+        case "WaitingForYourKitty":
+            info.innerHTML = "Use the kitty";
+            break;
+
+        case "WaitingForTheirKitty":
+            info.innerHTML = "Waiting for player " + (json["history"]["game_history"]["winning_bid_history"]["winning_bidder_index"] + 1) + " to use the kitty";
+            break;
+
+        case "WaitingForTheirPlay":
+            // TODO: update to use info in history struct.
+            info.innerHTML = "Waiting for player to play";
+            break;
+
+        case "Excluded":
+            info.innerHTML = "<div style='color: red'>" + json["history"]["excluded_reason"] + "</div>";
+            break;
+
+        case "MatchAborted":
+            info.innerHTML = "<div style='color: red'>" + json["history"]["match_history"]["match_aborted_reason"] + "</div>";
             break;
     }
 }

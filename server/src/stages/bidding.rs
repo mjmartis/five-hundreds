@@ -93,14 +93,7 @@ impl Bidding {
 
             // Send off bidding cues. Only the first bidder has bid options.
             if i == first_bidder_index {
-                history
-                    .game_history
-                    .as_mut()
-                    .unwrap()
-                    .bidding_history
-                    .as_mut()
-                    .unwrap()
-                    .bid_options = Some(new.available_bids(i));
+                unwrap_bidding_history(history).bid_options = Some(new.available_bids(i));
             }
             clients.send_event(
                 id,
@@ -208,14 +201,7 @@ impl Stage for Bidding {
                         // Invariant: this should have been populated when we
                         // first entered the bidding stage.
                         debug_assert!(history.game_history.is_some());
-                        history
-                            .game_history
-                            .as_mut()
-                            .unwrap()
-                            .bidding_history
-                            .as_mut()
-                            .unwrap()
-                            .bids[i] = Some(*bid);
+                        unwrap_bidding_history(history).bids[i] = Some(*bid);
                         clients.send_event(id, history.clone(), api::CurrentState::PlayerBid);
                     }
 
@@ -258,13 +244,7 @@ impl Stage for Bidding {
                     // Bidding is ongoing; broadcast the next bidder.
                     let new_bidder_index = (self.first_bidder_index + self.bids_made) % 4;
                     for (j, (id, history)) in players.iter_mut().enumerate() {
-                        let bid_history = &mut history
-                            .game_history
-                            .as_mut()
-                            .unwrap()
-                            .bidding_history
-                            .as_mut()
-                            .unwrap();
+                        let bid_history = unwrap_bidding_history(history);
 
                         bid_history.bid_options = if j == new_bidder_index {
                             Some(self.available_bids(j))
@@ -361,4 +341,15 @@ fn next_bid(bid: Bid) -> Option<Bid> {
         // No way to outbid open mis.
         Bid::OpenMis => None,
     }
+}
+
+// Convenience function to extract a mutable bidding history from a full history.
+fn unwrap_bidding_history(history: &mut api::History) -> &mut api::BiddingHistory {
+    history
+        .game_history
+        .as_mut()
+        .unwrap()
+        .bidding_history
+        .as_mut()
+        .unwrap()
 }

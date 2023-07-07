@@ -113,7 +113,7 @@ impl Stage for Lobby {
                     if player_index.is_some() {
                         api::CurrentState::PlayerJoined
                     } else {
-                        api::CurrentState::Excluded
+                        api::CurrentState::Error
                     },
                 );
 

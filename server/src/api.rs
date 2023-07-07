@@ -16,8 +16,8 @@ pub enum Step {
     // Make a bid.
     MakeBid(types::Bid),
 
-    // Take or leave kitty cards.
-    UseKitty(Vec<types::Card>), // Your selected hand. Invariant: length of 10.
+    // Discard cards after you have received the kitty.
+    DiscardCards(Vec<types::Card>), // Invariant: length of 3.
 
     // Announce the suit of the joker in your hand.
     AnnounceJokerSuit(types::Suit),

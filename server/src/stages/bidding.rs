@@ -70,7 +70,7 @@ impl Bidding {
             highest_bid: None,
         };
 
-        for (i, (id, history)) in players.iter_mut().enumerate() {
+        for (index, (id, history)) in players.iter_mut().enumerate() {
             // Clear old history and populate a new history with the new hand.
             history.match_history = Some(api::MatchHistory {
                 past_games: Vec::new(),
@@ -78,7 +78,7 @@ impl Bidding {
                 match_aborted_reason: None,
             });
             history.game_history = Some(api::GameHistory {
-                hand: hands[i].clone(),
+                hand: hands[index].clone(),
                 bidding_history: Some(api::BiddingHistory {
                     bids: vec![None; 4],
                     current_bidder_index: first_bidder_index,
@@ -92,13 +92,13 @@ impl Bidding {
             clients.send_event(id, history.clone(), api::CurrentState::HandDealt);
 
             // Send off bidding cues. Only the first bidder has bid options.
-            if i == first_bidder_index {
-                unwrap_bidding_history(history).bid_options = Some(new.available_bids(i));
+            if index == first_bidder_index {
+                unwrap_bidding_history(history).bid_options = Some(new.available_bids(index));
             }
             clients.send_event(
                 id,
                 history.clone(),
-                if i == first_bidder_index {
+                if index == first_bidder_index {
                     api::CurrentState::WaitingForYourBid
                 } else {
                     api::CurrentState::WaitingForTheirBid
@@ -155,116 +155,8 @@ impl Stage for Bidding {
     ) -> Box<dyn Stage> {
         match step {
             api::Step::MakeBid(bid) => {
-                if let Some(i) = player_index {
-                    // Player is trying to bid out of turn.
-                    if i != (self.first_bidder_index + self.bids_made) % 4 {
-                        error!("[client {}] tried to bid out of turn", client_id);
-                        clients.send_event(
-                            client_id,
-                            api::History {
-                                error: Some("Not your turn to bid.".to_string()),
-                                ..players[i].1.clone()
-                            },
-                            api::CurrentState::WaitingForTheirBid,
-                        );
-
-                        return self;
-                    }
-
-                    // Player is current bidder, but made an invalid bid.
-                    if !self.available_bids(i).contains(bid) {
-                        error!("[client {}] tried to make illegal bid", client_id);
-                        clients.send_event(
-                            client_id,
-                            api::History {
-                                error: Some(
-                                    "You tried to make a bid that is unavailable to you."
-                                        .to_string(),
-                                ),
-                                ..players[i].1.clone()
-                            },
-                            api::CurrentState::WaitingForYourBid,
-                        );
-
-                        return self;
-                    }
-
-                    // Now we know player is current bidder and has provided a valid bid.
-
-                    // Update our internal state.
-                    self.prev_bids[i] = Some(*bid);
-                    self.highest_bid = Some(*bid);
-                    self.bids_made += 1;
-
-                    // Add the bid to everyone's history.
-                    for (id, history) in players.iter_mut() {
-                        // Invariant: this should have been populated when we
-                        // first entered the bidding stage.
-                        debug_assert!(history.game_history.is_some());
-                        unwrap_bidding_history(history).bids[i] = Some(*bid);
-                        clients.send_event(id, history.clone(), api::CurrentState::PlayerBid);
-                    }
-
-                    // If this is the last bid, it could transition us into the "bid won" stage.
-                    let all_bid = self.prev_bids.iter().flatten().count() == 4;
-                    let pass_count = self
-                        .prev_bids
-                        .iter()
-                        .filter(|&b| *b == Some(Bid::Pass))
-                        .count();
-
-                    // All players passed without bidding!
-                    if pass_count == 4 {
-                        // TODO.
-                        return self;
-                    }
-
-                    // The last bid has been made.
-                    if self.highest_bid == Some(Bid::OpenMis) || (all_bid && pass_count == 3) {
-                        // Clear extraneous bidding history.
-                        for (_, history) in players.iter_mut() {
-                            history.game_history.as_mut().unwrap().bidding_history = None;
-                        }
-
-                        let winner_index = self
-                            .prev_bids
-                            .iter()
-                            .position(|&b| b == self.highest_bid)
-                            .unwrap();
-                        return Box::new(bid_won::BidWon::new(
-                            players,
-                            clients,
-                            winner_index,
-                            self.highest_bid.unwrap(),
-                            self.hands,
-                            self.kitty,
-                        ));
-                    }
-
-                    // Bidding is ongoing; broadcast the next bidder.
-                    let new_bidder_index = (self.first_bidder_index + self.bids_made) % 4;
-                    for (j, (id, history)) in players.iter_mut().enumerate() {
-                        let bid_history = unwrap_bidding_history(history);
-
-                        bid_history.bid_options = if j == new_bidder_index {
-                            Some(self.available_bids(j))
-                        } else {
-                            None
-                        };
-                        bid_history.current_bidder_index = new_bidder_index;
-
-                        clients.send_event(
-                            id,
-                            history.clone(),
-                            if j == new_bidder_index {
-                                api::CurrentState::WaitingForYourBid
-                            } else {
-                                api::CurrentState::WaitingForTheirBid
-                            },
-                        );
-                    }
-                } else {
-                    // Client isn't even a player.
+                // Client isn't even a player.
+                if player_index.is_none() {
                     clients.send_event(
                         client_id,
                         api::History {
@@ -273,9 +165,117 @@ impl Stage for Bidding {
                         },
                         api::CurrentState::Error,
                     );
+
+                    return self;
+                }
+                let index = player_index.unwrap();
+
+                // Player is trying to bid out of turn.
+                if index != (self.first_bidder_index + self.bids_made) % 4 {
+                    error!("[client {}] tried to bid out of turn", client_id);
+                    clients.send_event(
+                        client_id,
+                        api::History {
+                            error: Some("Not your turn to bid.".to_string()),
+                            ..players[index].1.clone()
+                        },
+                        api::CurrentState::WaitingForTheirBid,
+                    );
+
+                    return self;
                 }
 
-                self
+                // Player is current bidder, but made an invalid bid.
+                if !self.available_bids(index).contains(bid) {
+                    error!("[client {}] tried to make illegal bid", client_id);
+                    clients.send_event(
+                        client_id,
+                        api::History {
+                            error: Some(
+                                "You tried to make a bid that is unavailable to you.".to_string(),
+                            ),
+                            ..players[index].1.clone()
+                        },
+                        api::CurrentState::WaitingForYourBid,
+                    );
+
+                    return self;
+                }
+
+                // Now we know player is current bidder and has provided a valid bid.
+
+                // Update our internal state.
+                self.prev_bids[index] = Some(*bid);
+                self.highest_bid = Some(*bid);
+                self.bids_made += 1;
+
+                // Add the bid to everyone's history.
+                for (id, history) in players.iter_mut() {
+                    // Invariant: this should have been populated when we
+                    // first entered the bidding stage.
+                    debug_assert!(history.game_history.is_some());
+                    unwrap_bidding_history(history).bids[index] = Some(*bid);
+                    clients.send_event(id, history.clone(), api::CurrentState::PlayerBid);
+                }
+
+                // If this is the last bid, it could transition us into the "bid won" stage.
+                let all_bid = self.prev_bids.iter().flatten().count() == 4;
+                let pass_count = self
+                    .prev_bids
+                    .iter()
+                    .filter(|&b| *b == Some(Bid::Pass))
+                    .count();
+
+                // All players passed without bidding!
+                if pass_count == 4 {
+                    // TODO.
+                    return self;
+                }
+
+                // The last bid has been made.
+                if self.highest_bid == Some(Bid::OpenMis) || (all_bid && pass_count == 3) {
+                    // Clear extraneous bidding history.
+                    for (_, history) in players.iter_mut() {
+                        history.game_history.as_mut().unwrap().bidding_history = None;
+                    }
+
+                    let winner_index = self
+                        .prev_bids
+                        .iter()
+                        .position(|&b| b == self.highest_bid)
+                        .unwrap();
+                    return Box::new(bid_won::BidWon::new(
+                        players,
+                        clients,
+                        winner_index,
+                        self.highest_bid.unwrap(),
+                        self.hands,
+                        self.kitty,
+                    ));
+                }
+
+                // Bidding is ongoing; broadcast the next bidder.
+                let new_bidder_index = (self.first_bidder_index + self.bids_made) % 4;
+                for (j, (id, history)) in players.iter_mut().enumerate() {
+                    let bid_history = unwrap_bidding_history(history);
+
+                    bid_history.bid_options = if j == new_bidder_index {
+                        Some(self.available_bids(j))
+                    } else {
+                        None
+                    };
+                    bid_history.current_bidder_index = new_bidder_index;
+
+                    clients.send_event(
+                        id,
+                        history.clone(),
+                        if j == new_bidder_index {
+                            api::CurrentState::WaitingForYourBid
+                        } else {
+                            api::CurrentState::WaitingForTheirBid
+                        },
+                    );
+                }
             }
 
             bad_step => {
@@ -296,15 +296,15 @@ impl Stage for Bidding {
                     api::History {
                         error: Some("Invalid step during bidding.".to_string()),
                         ..player_index
-                            .map(|i| players[i].1.clone())
+                            .map(|index| players[index].1.clone())
                             .unwrap_or(Default::default())
                     },
                     state,
                 );
-
-                self
             }
         }
+
+        self
     }
 }
 

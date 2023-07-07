@@ -1,8 +1,10 @@
 mod aborted;
+mod bid_won;
 mod bidding;
 mod lobby;
 
 pub use self::aborted::Aborted;
+pub use self::bid_won::BidWon;
 pub use self::bidding::Bidding;
 pub use self::lobby::Lobby;
 

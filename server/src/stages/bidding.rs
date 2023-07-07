@@ -8,6 +8,7 @@ use log::{error, info};
 use rand::seq::SliceRandom;
 use std::debug_assert;
 
+use super::bid_won;
 use super::Stage;
 
 pub struct Bidding {
@@ -78,11 +79,11 @@ impl Bidding {
             });
             history.game_history = Some(api::GameHistory {
                 hand: hands[i].clone(),
-                bidding_history: api::BiddingHistory {
+                bidding_history: Some(api::BiddingHistory {
                     bids: vec![None; 4],
                     current_bidder_index: first_bidder_index,
                     bid_options: None,
-                },
+                }),
                 winning_bid_history: None,
                 plays_history: None,
             });
@@ -97,6 +98,8 @@ impl Bidding {
                     .as_mut()
                     .unwrap()
                     .bidding_history
+                    .as_mut()
+                    .unwrap()
                     .bid_options = Some(new.available_bids(i));
             }
             clients.send_event(
@@ -200,20 +203,68 @@ impl Stage for Bidding {
                     self.highest_bid = Some(*bid);
                     self.bids_made += 1;
 
-                    // First add the bid to everyone's history.
-                    for (j, (id, history)) in players.iter_mut().enumerate() {
+                    // Add the bid to everyone's history.
+                    for (id, history) in players.iter_mut() {
                         // Invariant: this should have been populated when we
                         // first entered the bidding stage.
                         debug_assert!(history.game_history.is_some());
-                        history.game_history.as_mut().unwrap().bidding_history.bids[i] = Some(*bid);
+                        history
+                            .game_history
+                            .as_mut()
+                            .unwrap()
+                            .bidding_history
+                            .as_mut()
+                            .unwrap()
+                            .bids[i] = Some(*bid);
                         clients.send_event(id, history.clone(), api::CurrentState::PlayerBid);
                     }
 
-                    // Second broadcast the next bidder.
+                    // If this is the last bid, it could transition us into the "bid won" stage.
+                    let all_bid = self.prev_bids.iter().flatten().count() == 4;
+                    let pass_count = self
+                        .prev_bids
+                        .iter()
+                        .filter(|&b| *b == Some(Bid::Pass))
+                        .count();
+
+                    // All players passed without bidding!
+                    if pass_count == 4 {
+                        // TODO.
+                        return self;
+                    }
+
+                    // The last bid has been made.
+                    if self.highest_bid == Some(Bid::OpenMis) || (all_bid && pass_count == 3) {
+                        // Clear extraneous bidding history.
+                        for (_, history) in players.iter_mut() {
+                            history.game_history.as_mut().unwrap().bidding_history = None;
+                        }
+
+                        let winner_index = self
+                            .prev_bids
+                            .iter()
+                            .position(|&b| b == self.highest_bid)
+                            .unwrap();
+                        return Box::new(bid_won::BidWon::new(
+                            players,
+                            clients,
+                            winner_index,
+                            self.highest_bid.unwrap(),
+                            self.hands,
+                            self.kitty,
+                        ));
+                    }
+
+                    // Bidding is ongoing; broadcast the next bidder.
                     let new_bidder_index = (self.first_bidder_index + self.bids_made) % 4;
                     for (j, (id, history)) in players.iter_mut().enumerate() {
-                        let bid_history =
-                            &mut history.game_history.as_mut().unwrap().bidding_history;
+                        let bid_history = &mut history
+                            .game_history
+                            .as_mut()
+                            .unwrap()
+                            .bidding_history
+                            .as_mut()
+                            .unwrap();
 
                         bid_history.bid_options = if j == new_bidder_index {
                             Some(self.available_bids(j))

@@ -202,7 +202,7 @@ pub struct GameHistory {
     // The cards in your hand.
     pub hand: Vec<types::Card>,
 
-    pub bidding_history: BiddingHistory,
+    pub bidding_history: Option<BiddingHistory>,
 
     pub winning_bid_history: Option<WinningBidHistory>,
 

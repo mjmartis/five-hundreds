@@ -194,7 +194,6 @@ function updateInfo(json) {
 
     // If there's any error, display it in red.
     const err_text = inner_field(json, ["history", "error"]);
-    console.log(err_text);
     if (err_text) {
         info.innerHTML = "<div style='color: red'>" + err_text + "</div>";
         return;
@@ -271,6 +270,12 @@ function updateCards(json) {
     const hand_info = inner_field(json, ["history", "game_history", "hand"]);
     if (!hand_info) {
         return;
+    }
+
+    // Append the kitty if it is available.
+    const kitty = inner_field(json, ["history", "game_history", "winning_bid_history", "kitty"]);
+    if (kitty) {
+        hand_info.push(...kitty);
     }
 
     const hand = document.getElementById("hand");
@@ -359,6 +364,14 @@ function main() {
         if (hand) {
             for (let i = 0; i < hand.length; ++i) {
                 hand[i] = prettyCard(hand[i]);
+            }
+        }
+
+        // Pretty print kitty.
+        const kitty = inner_field(json, ["history", "game_history", "winning_bid_history", "kitty"]);
+        if (kitty) {
+            for (let i = 0; i < kitty.length; ++i) {
+                kitty[i] = prettyCard(kitty[i]);
             }
         }
 

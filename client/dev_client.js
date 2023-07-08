@@ -178,6 +178,7 @@ function updateStage(json) {
         case "Excluded":
             // Display in red.
             stage.innerHTML = "<div style='color: red'>Excluded</div>";
+            break;
 
         case "MatchAborted":
             // Display in red.

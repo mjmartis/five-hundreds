@@ -4,7 +4,7 @@ use crate::api;
 use crate::events;
 use crate::types::*;
 
-use log::{error, info};
+use log::error;
 use rand::seq::SliceRandom;
 use std::debug_assert;
 
@@ -153,23 +153,11 @@ impl Stage for Bidding {
         client_id: &events::ClientId,
         step: &api::Step,
     ) -> Box<dyn Stage> {
+        // Bail with an error response if this isn't a player.
+        let Some(index) = super::reject_nonplayer(player_index, clients, client_id) else { return self; };
+
         match step {
             api::Step::MakeBid(bid) => {
-                // Client isn't even a player.
-                if player_index.is_none() {
-                    clients.send_event(
-                        client_id,
-                        api::History {
-                            error: Some("You are not a player in this game.".to_string()),
-                            ..Default::default()
-                        },
-                        api::CurrentState::Error,
-                    );
-
-                    return self;
-                }
-                let index = player_index.unwrap();
-
                 // Player is trying to bid out of turn.
                 if index != (self.first_bidder_index + self.bids_made) % 4 {
                     error!("[client {}] tried to bid out of turn", client_id);
@@ -278,28 +266,19 @@ impl Stage for Bidding {
                 }
             }
 
-            bad_step => {
-                error!(
-                    "[client {}] tried an invalid step in bidding: {:?}",
-                    client_id, bad_step
-                );
-
-                let state = match player_index {
-                    None => api::CurrentState::Error,
-                    Some(i) if i == (self.first_bidder_index + self.bids_made) % 4 => {
-                        api::CurrentState::WaitingForYourBid
-                    }
-                    _ => api::CurrentState::WaitingForTheirBid,
-                };
-                clients.send_event(
+            _bad_step => {
+                super::process_bad_step(
+                    players,
+                    player_index,
+                    clients,
                     client_id,
-                    api::History {
-                        error: Some("Invalid step during bidding.".to_string()),
-                        ..player_index
-                            .map(|index| players[index].1.clone())
-                            .unwrap_or(Default::default())
+                    step,
+                    if index == (self.first_bidder_index + self.bids_made) % 4 {
+                        api::CurrentState::WaitingForYourBid
+                    } else {
+                        api::CurrentState::WaitingForTheirBid
                     },
-                    state,
+                    "during bidding",
                 );
             }
         }

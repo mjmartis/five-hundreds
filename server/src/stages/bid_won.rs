@@ -5,7 +5,7 @@ use crate::api;
 use crate::events;
 use crate::types::*;
 
-use log::{error, info};
+use log::error;
 use std::collections::HashSet;
 use std::debug_assert;
 
@@ -79,24 +79,11 @@ impl Stage for BidWon {
         client_id: &events::ClientId,
         step: &api::Step,
     ) -> Box<dyn Stage> {
+        // Bail with an error response if this isn't a player.
+        let Some(index) = super::reject_nonplayer(player_index, clients, client_id) else { return self; };
+
         match &step {
             api::Step::DiscardCards(cards) => {
-                // Client isn't even a player.
-                if player_index.is_none() {
-                    clients.send_event(
-                        client_id,
-                        api::History {
-                            error: Some("You are not a player in this game.".to_string()),
-                            ..Default::default()
-                        },
-                        api::CurrentState::Error,
-                    );
-
-                    return self;
-                }
-
-                let index = player_index.unwrap();
-
                 // Player isn't the bid winner.
                 if index != self.winning_bidder_index {
                     error!(
@@ -186,29 +173,19 @@ impl Stage for BidWon {
                 }
             }
 
-            bad_step => {
-                error!(
-                    "[client {}] tried an invalid step after bid won: {:?}",
-                    client_id, bad_step
-                );
-
-                let state = match player_index {
-                    None => api::CurrentState::Error,
-                    Some(i) if i == self.winning_bidder_index => {
-                        api::CurrentState::WaitingForYourKitty
-                    }
-                    _ => api::CurrentState::WaitingForTheirKitty,
-                };
-
-                clients.send_event(
+            _bad_step => {
+                super::process_bad_step(
+                    players,
+                    player_index,
+                    clients,
                     client_id,
-                    api::History {
-                        error: Some("Invalid step after bid won.".to_string()),
-                        ..player_index
-                            .map(|i| players[i].1.clone())
-                            .unwrap_or(Default::default())
+                    step,
+                    if index == self.winning_bidder_index {
+                        api::CurrentState::WaitingForYourKitty
+                    } else {
+                        api::CurrentState::WaitingForTheirKitty
                     },
-                    state,
+                    "after bid won",
                 );
             }
         }

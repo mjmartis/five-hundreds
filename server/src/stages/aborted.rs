@@ -9,7 +9,7 @@ pub struct Aborted {}
 impl super::Stage for Aborted {
     // Always send the error state back.
     fn process_step(
-        mut self: Box<Self>,
+        self: Box<Self>,
         players: &mut Vec<(events::ClientId, api::History)>,
         player_index: Option<usize>,
         clients: &events::ClientMap,

@@ -6,7 +6,7 @@ use super::Stage;
 use crate::api;
 use crate::events;
 
-use log::{error, info};
+use log::info;
 
 pub struct Lobby {
     game_index: usize,
@@ -20,7 +20,7 @@ impl Lobby {
 
 impl Stage for Lobby {
     fn process_step(
-        mut self: Box<Self>,
+        self: Box<Self>,
         players: &mut Vec<(events::ClientId, api::History)>,
         player_index: Option<usize>,
         clients: &events::ClientMap,
@@ -92,33 +92,26 @@ impl Stage for Lobby {
                     info!("Starting match.");
                     return Box::new(bidding::Bidding::new(players, clients, self.game_index % 4));
                 }
-
-                self
             }
 
             // A client has made a step that isn't valid in the lobby.
-            bad_step => {
-                error!(
-                    "[client {}] tried an invalid step in the lobby: {:?}",
-                    client_id, bad_step
-                );
-                clients.send_event(
+            _bad_step => {
+                super::process_bad_step(
+                    players,
+                    player_index,
+                    clients,
                     client_id,
-                    api::History {
-                        error: Some("Invalid step in lobby.".to_string()),
-                        ..player_index
-                            .map(|i| players[i].1.clone())
-                            .unwrap_or(Default::default())
-                    },
+                    step,
                     if player_index.is_some() {
                         api::CurrentState::PlayerJoined
                     } else {
                         api::CurrentState::Error
                     },
+                    "in the lobby",
                 );
-
-                self
             }
         }
+
+        self
     }
 }

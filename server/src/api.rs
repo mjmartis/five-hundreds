@@ -30,7 +30,7 @@ pub enum Step {
 }
 
 // The most recent state that the session is in.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum CurrentState {
     // You or another player have just joined.
     // Player count, your index and your resume token are stored in history struct.

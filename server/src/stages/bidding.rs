@@ -154,7 +154,7 @@ impl Stage for Bidding {
         step: &api::Step,
     ) -> Box<dyn Stage> {
         // Bail with an error response if this isn't a player.
-        let Some(index) = super::reject_nonplayer(player_index, clients, client_id) else { return self; };
+        let Some(index) = super::reject_nonplayer(player_index, clients, client_id, step) else { return self; };
 
         match step {
             api::Step::MakeBid(bid) => {

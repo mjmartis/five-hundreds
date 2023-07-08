@@ -37,8 +37,22 @@ fn reject_nonplayer(
     player_index: Option<usize>,
     clients: &events::ClientMap,
     client_id: &events::ClientId,
+    step: &api::Step,
 ) -> Option<usize> {
-    if player_index.is_none() {
+    if player_index.is_some() {
+        return player_index;
+    }
+
+    if let api::Step::Join(_) = step {
+        clients.send_event(
+            client_id,
+            api::History {
+                error: Some("Match has started.".to_string()),
+                ..Default::default()
+            },
+            api::CurrentState::Excluded,
+        );
+    } else {
         clients.send_event(
             client_id,
             api::History {
@@ -49,7 +63,7 @@ fn reject_nonplayer(
         );
     }
 
-    return player_index;
+    return None;
 }
 
 // Common logic to return an error message for an unexpected step.

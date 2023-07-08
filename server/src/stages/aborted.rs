@@ -31,7 +31,7 @@ impl super::Stage for Aborted {
             }
         } else {
             api::History {
-                error: Some("Match aborted".to_string()),
+                error: Some("Match aborted.".to_string()),
                 ..Default::default()
             }
         };

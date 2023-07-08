@@ -47,20 +47,6 @@ impl Stage for Lobby {
                     return self;
                 }
 
-                // Player list is already full.
-                if players.len() == 4 {
-                    clients.send_event(
-                        client_id,
-                        api::History {
-                            excluded_reason: Some("Game ongoing.".to_string()),
-                            ..Default::default()
-                        },
-                        api::CurrentState::Excluded,
-                    );
-                    info!("[client {}] excluded due to ongoing game.", client_id);
-                    return self;
-                }
-
                 // Note: starts with incorrect player count to match the other histories that are
                 // now out-of-date.
                 players.push((

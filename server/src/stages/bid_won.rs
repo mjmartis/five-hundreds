@@ -26,13 +26,12 @@ impl BidWon {
     ) -> Self {
         // Notify players that the bid has been won.
         for (id, history) in players.iter_mut() {
-            history.game_history.as_mut().unwrap().winning_bid_history =
-                Some(api::WinningBidHistory {
-                    winning_bidder_index,
-                    winning_bid,
-                    kitty: None,
-                    discarded: None,
-                });
+            unwrap_game_history(history).winning_bid_history = Some(api::WinningBidHistory {
+                winning_bidder_index,
+                winning_bid,
+                kitty: None,
+                discarded: None,
+            });
 
             clients.send_event(id, history.clone(), api::CurrentState::BidWon);
         }
@@ -145,7 +144,7 @@ impl Stage for BidWon {
                     .copied()
                     .collect::<Vec<_>>();
                 debug_assert!(new_hand.len() == 10);
-                players[index].1.game_history.as_mut().unwrap().hand = new_hand;
+                unwrap_game_history(&mut players[index].1).hand = new_hand;
                 unwrap_winning_bid_history(&mut players[index].1).kitty = None;
                 unwrap_winning_bid_history(&mut players[index].1).discarded =
                     Some(discarded.iter().copied().collect::<Vec<_>>());

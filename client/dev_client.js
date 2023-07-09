@@ -94,6 +94,37 @@ function uglyBid(bid) {
     }
 }
 
+// Convert card string back into the json struct expected by the server.
+function uglyCard(card) {
+    const SUITS = {
+        "♠": "Spades",
+        "♣": "Clubs",
+        "◆": "Diamonds",
+        "♥": "Hearts"
+    };
+
+    const FACES = {
+        "J": 11,
+        "Q": 12,
+        "K": 13,
+        "A": 14,
+    };
+
+    if (card == "★") {
+        return "Joker";
+    }
+
+    // Only 2 char face is "10".
+    const face = card[1] == "0" ? "10" : card[0];
+    const suit = card[1] == "0" ? card[2] : card[1];
+    return {
+        "SuitedCard": {
+            "face": FACES[face] ?? parseInt(face),
+            "suit": SUITS[suit],
+        },
+    };
+}
+
 // Helper: create a new option for a select element that contains the given
 // text.
 function newSelectOption(contents) {
@@ -143,6 +174,45 @@ function insertBidPicker(e) {
         d.bid = count.value + suit.value;
     }
 }
+
+// Inserts our card-picker faux element into the given div.
+function insertCardPicker(e) {
+    // Dodgy: use a custom property for our bid.
+    e.card = "★";
+
+    // First comes drop-down selector for face.
+    const face = document.createElement("select");
+    face.disabled = true;
+    e.appendChild(face);
+    for (const c of ["4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]) {
+        face.add(newSelectOption(c));
+    }
+
+    // Then comes a drop-down selector for suit.
+    const suit = document.createElement("select");
+    e.appendChild(suit);
+    for (const s of ["★", "♠", "♣", "◆", "♥"]) {
+        suit.add(newSelectOption(s));
+    }
+
+    // Update custom property (and enable/disable suit selector) when a new
+    // face option is selected.
+    const d = e;
+    suit.onchange = function() {
+        face.disabled = suit.value == "★";
+        if (face.disabled) {
+            d.card = "★";
+        } else {
+            d.card = face.value + suit.value;
+        }
+    }
+
+    // Update custom property when a new suit is selected.
+    face.onchange = function() {
+        d.card = face.value + suit.value;
+    }
+}
+
 
 // Updates the stage text to match the session state sent by the server.
 function updateStage(json) {
@@ -273,13 +343,12 @@ function updateCards(json) {
     }
 
     // Append the kitty if it is available.
-    const kitty = inner_field(json, ["history", "game_history", "winning_bid_history", "kitty"]);
-    if (kitty) {
-        hand_info.push(...kitty);
-    }
+    const kitty_info = inner_field(json, ["history", "game_history", "winning_bid_history", "kitty"]) ?? [];
+
+    const cards = [...hand_info, ...kitty_info];
 
     const hand = document.getElementById("hand");
-    for (const details of hand_info) {
+    for (const details of cards) {
         const card = document.createElement("div");
         card.classList.add("card");
         card.innerHTML = details;
@@ -352,6 +421,11 @@ function main() {
         insertBidPicker(e);
     }
 
+    // Insert pseudo elements for cards bids.
+    for (const e of document.getElementsByClassName("card_picker")) {
+        insertCardPicker(e);
+    }
+
     // Connect to the server.
     const socket = new WebSocket("ws://192.168.1.69:8080");
 
@@ -375,12 +449,26 @@ function main() {
             }
         }
 
-        // Also pretty print bids in response JSON.
+        // Pretty print discarded cards.
+        const discarded = inner_field(json, ["history", "game_history", "winning_bid_history", "discarded"]);
+        if (discarded) {
+            for (let i = 0; i < discarded.length; ++i) {
+                discarded[i] = prettyCard(discarded[i]);
+            }
+        }
+
+        // Pretty print bids.
         const bids = inner_field(json, ["history", "game_history", "bidding_history", "bid_options"]);
         if (bids) {
             for (let i = 0; i < bids.length; ++i) {
                 bids[i] = prettyBid(bids[i]);
             }
+        }
+
+        // Pretty print winning bid.
+        const winning_bid_history = inner_field(json, ["history", "game_history", "winning_bid_history"]);
+        if (winning_bid_history && winning_bid_history["winning_bid"]) {
+            winning_bid_history["winning_bid"] = prettyBid(winning_bid_history["winning_bid"]);
         }
 
         // Update client visuals.
@@ -415,6 +503,18 @@ function main() {
     document.getElementById("bid_button").addEventListener("click", () => {
         const payload = {
             "MakeBid": uglyBid(document.getElementById("picked_bid").bid),
+        };
+        socket.send(JSON.stringify(payload));
+    });
+
+    // Send DiscardCards step.
+    document.getElementById("discard_button").addEventListener("click", () => {
+        const payload = {
+            "DiscardCards": [
+                uglyCard(document.getElementById("discard_1").card),
+                uglyCard(document.getElementById("discard_2").card),
+                uglyCard(document.getElementById("discard_3").card),
+            ],
         };
         socket.send(JSON.stringify(payload));
     });

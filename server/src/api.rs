@@ -160,6 +160,10 @@ pub struct WinningBidHistory {
 
     // The cards in your kitty, if you won the bidding.
     pub kitty: Option<Vec<types::Card>>,
+
+    // The cards you discarded, if you won the bidding and have chosen which
+    // cards to discard.
+    pub discarded: Option<Vec<types::Card>>,
 }
 
 // Background information about the tricks being played.

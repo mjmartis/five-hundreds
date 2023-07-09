@@ -15,7 +15,6 @@ pub struct Bidding {
     first_bidder_index: usize,
     bids_made: usize,
 
-    hands: Vec<Vec<Card>>,
     kitty: Vec<Card>,
 
     // The latest bids for each player. Used to determine which bids can be
@@ -64,7 +63,6 @@ impl Bidding {
         let new = Bidding {
             first_bidder_index,
             bids_made: 0,
-            hands: hands.clone(),
             kitty,
             prev_bids: vec![None; 4],
             highest_bid: None,
@@ -194,7 +192,9 @@ impl Stage for Bidding {
 
                 // Update our internal state.
                 self.prev_bids[index] = Some(*bid);
-                self.highest_bid = Some(*bid);
+                if *bid != Bid::Pass {
+                    self.highest_bid = Some(*bid);
+                }
                 self.bids_made += 1;
 
                 // Add the bid to everyone's history.
@@ -216,7 +216,7 @@ impl Stage for Bidding {
 
                 // All players passed without bidding!
                 if pass_count == 4 {
-                    // TODO.
+                    // TODO: handle this.
                     return self;
                 }
 
@@ -237,7 +237,6 @@ impl Stage for Bidding {
                         clients,
                         winner_index,
                         self.highest_bid.unwrap(),
-                        self.hands,
                         self.kitty,
                     ));
                 }

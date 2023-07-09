@@ -38,15 +38,8 @@ impl BidWon {
         }
 
         // Assign the kitty to the winning bidder.
-        players[winning_bidder_index]
-            .1
-            .game_history
-            .as_mut()
-            .unwrap()
-            .winning_bid_history
-            .as_mut()
-            .unwrap()
-            .kitty = Some(kitty.clone());
+        unwrap_winning_bid_history(&mut players[winning_bidder_index].1).kitty =
+            Some(kitty.clone());
 
         // Now notify players that the kitty needs to be used.
         for (i, (id, history)) in players.iter().enumerate() {

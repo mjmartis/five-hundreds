@@ -5,17 +5,17 @@
 
 // Accepts a JSON dict and a list of nested fields to traverse. Returns the
 // final nested field if it exists, or null otherwise.
-function inner_field(json, fields) {
-    let cur_obj = json;
+function innerField(json, fields) {
+    let curObj = json;
     for (const i of fields) {
-        if (cur_obj[i]) {
-            cur_obj = cur_obj[i];
+        if (curObj[i]) {
+            curObj = curObj[i];
         } else {
             return null;
         }
     }
 
-    return cur_obj;
+    return curObj;
 }
 
 // Takes in a card JSON struct and returns a nicer string representation.
@@ -263,9 +263,9 @@ function updateInfo(json) {
     info.innerHTML = "";
 
     // If there's any error, display it in red.
-    const err_text = inner_field(json, ["history", "error"]);
-    if (err_text) {
-        info.innerHTML = "<div style='color: red'>" + err_text + "</div>";
+    const errText = innerField(json, ["history", "error"]);
+    if (errText) {
+        info.innerHTML = "<div style='color: red'>" + errText + "</div>";
         return;
     }
 
@@ -310,7 +310,7 @@ function updatePlayerNames(json) {
     const PLAYER_PREFIXES = ["pb", "pl", "pt", "pr"];
 
     // Player info is in the lobby history.
-    const lobbyHistory = inner_field(json, ["history", "lobby_history"]);
+    const lobbyHistory = innerField(json, ["history", "lobby_history"]);
     if (!lobbyHistory) {
         return;
     }
@@ -337,15 +337,15 @@ function updateCards(json) {
     document.getElementById("hand").innerHTML = "";
 
     // Hand info is in the game history.
-    const hand_info = inner_field(json, ["history", "game_history", "hand"]);
-    if (!hand_info) {
+    const handInfo = innerField(json, ["history", "game_history", "hand"]);
+    if (!handInfo) {
         return;
     }
 
     // Append the kitty if it is available.
-    const kitty_info = inner_field(json, ["history", "game_history", "winning_bid_history", "kitty"]) ?? [];
+    const kittyInfo = innerField(json, ["history", "game_history", "winning_bid_history", "kitty"]) ?? [];
 
-    const cards = [...hand_info, ...kitty_info];
+    const cards = [...handInfo, ...kittyInfo];
 
     const hand = document.getElementById("hand");
     for (const details of cards) {
@@ -374,7 +374,7 @@ function updateAuxUi(json) {
     }
 
     // Available bids are only shown when it's your turn to bid.
-    const bidOptions = inner_field(json, ["history", "game_history", "bidding_history", "bid_options"]);
+    const bidOptions = innerField(json, ["history", "game_history", "bidding_history", "bid_options"]);
     if (!bidOptions) {
         return;
     }
@@ -434,7 +434,7 @@ function main() {
 
         // Pretty print hand in response JSON. This makes API responses easier
         // for humans to parse.
-        const hand = inner_field(json, ["history", "game_history", "hand"]);
+        const hand = innerField(json, ["history", "game_history", "hand"]);
         if (hand) {
             for (let i = 0; i < hand.length; ++i) {
                 hand[i] = prettyCard(hand[i]);
@@ -442,7 +442,7 @@ function main() {
         }
 
         // Pretty print kitty.
-        const kitty = inner_field(json, ["history", "game_history", "winning_bid_history", "kitty"]);
+        const kitty = innerField(json, ["history", "game_history", "winning_bid_history", "kitty"]);
         if (kitty) {
             for (let i = 0; i < kitty.length; ++i) {
                 kitty[i] = prettyCard(kitty[i]);
@@ -450,7 +450,7 @@ function main() {
         }
 
         // Pretty print discarded cards.
-        const discarded = inner_field(json, ["history", "game_history", "winning_bid_history", "discarded"]);
+        const discarded = innerField(json, ["history", "game_history", "winning_bid_history", "discarded"]);
         if (discarded) {
             for (let i = 0; i < discarded.length; ++i) {
                 discarded[i] = prettyCard(discarded[i]);
@@ -458,7 +458,7 @@ function main() {
         }
 
         // Pretty print bids.
-        const bids = inner_field(json, ["history", "game_history", "bidding_history", "bid_options"]);
+        const bids = innerField(json, ["history", "game_history", "bidding_history", "bid_options"]);
         if (bids) {
             for (let i = 0; i < bids.length; ++i) {
                 bids[i] = prettyBid(bids[i]);
@@ -466,9 +466,9 @@ function main() {
         }
 
         // Pretty print winning bid.
-        const winning_bid_history = inner_field(json, ["history", "game_history", "winning_bid_history"]);
-        if (winning_bid_history && winning_bid_history["winning_bid"]) {
-            winning_bid_history["winning_bid"] = prettyBid(winning_bid_history["winning_bid"]);
+        const winningBidHistory = innerField(json, ["history", "game_history", "winning_bid_history"]);
+        if (winningBidHistory && winningBidHistory["winning_bid"]) {
+            winningBidHistory["winning_bid"] = prettyBid(winningBidHistory["winning_bid"]);
         }
 
         // Update client visuals.
